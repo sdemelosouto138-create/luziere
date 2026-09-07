@@ -1,5 +1,6 @@
 import path from "node:path";
-import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
+import { readFileSync } from "node:fs";
+import { Document, Page, Text, View, Image, StyleSheet, Font } from "@react-pdf/renderer";
 import { formatarData, formatarMoeda } from "@/lib/format";
 
 const fontsDir = path.join(process.cwd(), "src", "lib", "fonts");
@@ -261,11 +262,18 @@ export function OrcamentoPdf({ dados }: { dados: OrcamentoPdfData }) {
     <Document title={`Orcamento-${dados.numero}-Luziere`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.marca}>
-              Luzi<Text style={styles.marcaAccent}>è</Text>re
-            </Text>
-            <Text style={styles.tagline}>ILUMINAÇÃO RESIDENCIAL</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <Image
+              // Passar o arquivo como Buffer evita que um caminho Windows (C:\...) seja lido como URL.
+              src={{ data: readFileSync(path.join(process.cwd(), "public", "logo-simbolo-claro.png")), format: "png" }}
+              style={{ width: 44, height: 51, borderRadius: 6 }}
+            />
+            <View>
+              <Text style={styles.marca}>
+                Luzi<Text style={styles.marcaAccent}>è</Text>re
+              </Text>
+              <Text style={styles.tagline}>ILUMINAÇÃO RESIDENCIAL</Text>
+            </View>
           </View>
           <View style={styles.lojaInfo}>
             <Text>{dados.loja.nome}</Text>

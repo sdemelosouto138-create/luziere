@@ -2,6 +2,7 @@
 
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +55,15 @@ function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#1e1e1e] px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-10 flex flex-col items-center gap-2 text-center">
+        <div className="mb-10 flex flex-col items-center gap-3 text-center">
+          <Image
+            src="/logo-simbolo-escuro.png"
+            alt="Símbolo Luzière"
+            width={88}
+            height={97}
+            className="size-22 rounded-2xl object-cover shadow-lg"
+            priority
+          />
           <span className="font-serif text-4xl tracking-wide text-[#f2efe9]">
             Luzi<span className="text-[#e8b44a]">è</span>re
           </span>

@@ -140,9 +140,13 @@ DATABASE_URL="postgresql://...neon..." npm run db:seed
 
 A Vercel gera um link (`https://luziere-xxx.vercel.app`). Abra no computador ou no celular e faça login. Você pode adicionar um domínio próprio em **Settings → Domains**.
 
-## Logo
+## Logo e marca
 
-Coloque o arquivo `logo.svg` (ou `logo.png`) em `public/`. Enquanto não houver arquivo, a marca "Luzière" é montada em tipografia serifada com o acento dourado. Para usar a logo na sidebar, troque o texto em `src/components/layout/sidebar.tsx` por `<Image src="/logo.svg" ... />`; no PDF, use `<Image src={path.join(process.cwd(), "public", "logo.png")} />` em `src/components/pdf/orcamento-pdf.tsx` (o PDF aceita PNG/JPG).
+- `public/logo-simbolo-escuro.png` — símbolo em fundo grafite (sidebar e tela de login).
+- `public/logo-simbolo-claro.png` — símbolo em fundo creme (cabeçalho do PDF).
+- `brand/moodboard.png` e `brand/logo-horizontal-claro.png` — material de referência da marca (não é servido pelo site).
+
+O wordmark "Luzière" é renderizado em tipografia (Playfair Display) ao lado do símbolo. Para trocar a logo, substitua os PNGs mantendo os nomes; se tiver a versão em SVG com fundo transparente, troque as referências em `src/components/layout/sidebar.tsx`, `src/app/(auth)/login/page.tsx` e `src/components/pdf/orcamento-pdf.tsx` (o PDF aceita PNG/JPG, não SVG).
 
 ## Estrutura de pastas
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { NAV_ITEMS } from "./nav-items";
@@ -18,13 +19,23 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
-      <div className="flex flex-col items-start gap-1 px-6 py-8">
-        <span className="font-serif text-3xl tracking-wide">
-          Luzi<span className="text-sidebar-primary">è</span>re
-        </span>
-        <span className="text-[11px] uppercase tracking-[0.3em] text-sidebar-foreground/50">
-          Gestão de Vendas
-        </span>
+      <div className="flex items-center gap-3 px-5 py-7">
+        <Image
+          src="/logo-simbolo-escuro.png"
+          alt="Símbolo Luzière"
+          width={44}
+          height={49}
+          className="size-11 rounded-xl object-cover"
+          priority
+        />
+        <div className="flex flex-col">
+          <span className="font-serif text-2xl leading-none tracking-wide">
+            Luzi<span className="text-sidebar-primary">è</span>re
+          </span>
+          <span className="mt-1 text-[10px] uppercase tracking-[0.3em] text-sidebar-foreground/50">
+            Gestão de Vendas
+          </span>
+        </div>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3">
