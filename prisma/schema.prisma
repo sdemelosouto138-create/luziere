@@ -1,0 +1,143 @@
+// Schema do banco de dados do sistema Luzière.
+// Usamos PostgreSQL tanto em desenvolvimento quanto em produção (via Neon ou Supabase).
+// A string de conexão fica em DATABASE_URL (.env) e é lida por prisma.config.ts (CLI)
+// e por src/lib/prisma.ts (aplicação, via driver adapter @prisma/adapter-pg).
+// Veja o README.md para o passo a passo de configuração.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Categoria {
+  id       String    @id @default(cuid())
+  nome     String    @unique
+  produtos Produto[]
+
+  @@map("categorias")
+}
+
+model Produto {
+  id             String    @id @default(cuid())
+  nome           String
+  sku            String    @unique
+  descricao      String?
+  categoriaId    String
+  categoria      Categoria @relation(fields: [categoriaId], references: [id])
+  precoCusto     Decimal
+  precoVenda     Decimal
+  unidade        String    @default("un") // un, m, cx
+  potenciaW      Float?
+  temperaturaCor String? // 2700K, 3000K, 4000K, 6500K
+  estoqueAtual   Int       @default(0)
+  estoqueMinimo  Int       @default(0)
+  fornecedor     String?
+  ativo          Boolean   @default(true)
+  criadoEm       DateTime  @default(now())
+  atualizadoEm   DateTime  @updatedAt
+
+  imagens       ImagemProduto[]
+  itensPedido   ItemPedido[]
+  movimentacoes MovimentacaoEstoque[]
+
+  @@map("produtos")
+}
+
+model ImagemProduto {
+  id        String  @id @default(cuid())
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  url       String
+  ordem     Int     @default(0)
+
+  @@map("imagens_produto")
+}
+
+model Cliente {
+  id           String   @id @default(cuid())
+  nome         String
+  telefone     String?
+  email        String?
+  cpfCnpj      String?
+  cep          String?
+  rua          String?
+  numero       String?
+  bairro       String?
+  cidade       String?
+  uf           String?
+  observacoes  String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  pedidos Pedido[]
+
+  @@map("clientes")
+}
+
+enum StatusPedido {
+  ORCAMENTO
+  APROVADO
+  CONCLUIDO
+  CANCELADO
+}
+
+model Pedido {
+  id                String       @id @default(cuid())
+  numero            Int          @unique @default(autoincrement())
+  clienteId         String
+  cliente           Cliente      @relation(fields: [clienteId], references: [id])
+  status            StatusPedido @default(ORCAMENTO)
+  desconto          Decimal      @default(0)
+  descontoTipo      String       @default("VALOR") // VALOR | PERCENTUAL
+  frete             Decimal      @default(0)
+  prazoEntrega      String?
+  condicaoPagamento String?
+  observacoes       String?
+  validadeDias      Int          @default(7)
+  criadoEm          DateTime     @default(now())
+  atualizadoEm      DateTime     @updatedAt
+
+  itens         ItemPedido[]
+  movimentacoes MovimentacaoEstoque[]
+
+  @@map("pedidos")
+}
+
+model ItemPedido {
+  id            String  @id @default(cuid())
+  pedidoId      String
+  pedido        Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produtoId     String
+  produto       Produto @relation(fields: [produtoId], references: [id])
+  quantidade    Int
+  precoUnitario Decimal
+  subtotal      Decimal
+
+  @@map("itens_pedido")
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
+  AJUSTE
+  VENDA
+  CANCELAMENTO
+}
+
+model MovimentacaoEstoque {
+  id         String           @id @default(cuid())
+  produtoId  String
+  produto    Produto          @relation(fields: [produtoId], references: [id])
+  tipo       TipoMovimentacao
+  quantidade Int
+  motivo     String?
+  pedidoId   String?
+  pedido     Pedido?          @relation(fields: [pedidoId], references: [id])
+  criadoEm   DateTime         @default(now())
+
+  @@map("movimentacoes_estoque")
+}

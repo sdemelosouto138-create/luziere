@@ -1,0 +1,6 @@
+# Normaliza quebras de linha (LF no repositório), evitando avisos CRLF no Windows.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.ttf binary
