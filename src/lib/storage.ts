@@ -23,6 +23,13 @@ export async function salvarImagem(arquivo: File): Promise<string> {
     return blob.url;
   }
 
+  if (process.env.VERCEL) {
+    // Na Vercel o sistema de arquivos é somente leitura: sem o Blob não há onde salvar.
+    throw new Error(
+      "Armazenamento de imagens não configurado: crie um store Vercel Blob, conecte ao projeto (variável BLOB_READ_WRITE_TOKEN) e faça um Redeploy.",
+    );
+  }
+
   const diretorio = path.join(process.cwd(), "public", UPLOAD_SUBDIR);
   await mkdir(diretorio, { recursive: true });
   const bytes = Buffer.from(await arquivo.arrayBuffer());

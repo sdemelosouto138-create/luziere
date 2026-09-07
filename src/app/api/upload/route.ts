@@ -13,6 +13,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: "Envie apenas arquivos de imagem." }, { status: 400 });
   }
 
-  const url = await salvarImagem(arquivo);
-  return NextResponse.json({ url });
+  try {
+    const url = await salvarImagem(arquivo);
+    return NextResponse.json({ url });
+  } catch (erro) {
+    const mensagem = erro instanceof Error ? erro.message : "Falha ao salvar a imagem.";
+    console.error("[upload]", erro);
+    return NextResponse.json({ erro: mensagem }, { status: 500 });
+  }
 }
