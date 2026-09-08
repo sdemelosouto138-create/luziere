@@ -4,23 +4,34 @@ import { randomUUID } from "node:crypto";
 
 const UPLOAD_SUBDIR = "uploads/produtos";
 
+/** Prefixo das URLs servidas pelo próprio app quando o store Blob é privado. */
+export const PREFIXO_IMAGENS_PRIVADAS = "/api/imagens/";
+
 /**
  * Salva um arquivo enviado e retorna a URL pública.
- * Em produção (com BLOB_READ_WRITE_TOKEN configurado) usa o Vercel Blob.
- * Em desenvolvimento local, salva em public/uploads/produtos para não exigir
- * nenhuma conta/serviço externo.
+ * Em produção (com BLOB_READ_WRITE_TOKEN configurado) usa o Vercel Blob:
+ *  - store público  → retorna a URL direta do Blob;
+ *  - store privado  → salva como privado e retorna /api/imagens/<caminho>, rota
+ *    do próprio app que lê o arquivo com o token (ver src/app/api/imagens).
+ * Em desenvolvimento local, salva em public/uploads/produtos.
  */
 export async function salvarImagem(arquivo: File): Promise<string> {
   const extensao = arquivo.name.split(".").pop() || "jpg";
   const nomeArquivo = `${randomUUID()}.${extensao}`;
+  const caminho = `${UPLOAD_SUBDIR}/${nomeArquivo}`;
 
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const { put } = await import("@vercel/blob");
-    const blob = await put(`${UPLOAD_SUBDIR}/${nomeArquivo}`, arquivo, {
-      access: "public",
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
-    return blob.url;
+    try {
+      const blob = await put(caminho, arquivo, { access: "public" });
+      return blob.url;
+    } catch (erro) {
+      const mensagem = erro instanceof Error ? erro.message : String(erro);
+      if (!/private/i.test(mensagem)) throw erro;
+      // Store configurado como privado: guarda como privado e serve pelo app.
+      await put(caminho, arquivo, { access: "private", addRandomSuffix: false });
+      return `${PREFIXO_IMAGENS_PRIVADAS}${caminho}`;
+    }
   }
 
   if (process.env.VERCEL) {
@@ -37,5 +48,5 @@ export async function salvarImagem(arquivo: File): Promise<string> {
   await mkdir(diretorio, { recursive: true });
   const bytes = Buffer.from(await arquivo.arrayBuffer());
   await writeFile(path.join(diretorio, nomeArquivo), bytes);
-  return `/${UPLOAD_SUBDIR}/${nomeArquivo}`;
+  return `/${caminho}`;
 }
