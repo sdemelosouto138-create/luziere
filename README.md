@@ -118,6 +118,8 @@ git remote add origin https://github.com/SEU-USUARIO/luziere.git && git push -u 
 
 O comando de build (`prisma generate && prisma migrate deploy && next build`) já cria as tabelas no Neon automaticamente no primeiro deploy.
 
+> **Neon e migrações:** a `DATABASE_URL` do Neon é a URL do *pooler*. As migrações precisam de conexão direta, então o `prisma.config.ts` deriva sozinho a URL direta (remove `-pooler` do host). Se usar outro provedor com pooler (ex.: Supabase), defina `DIRECT_URL` com a URL direta.
+
 > **Dica:** evite rodar `npm run build` localmente enquanto o `npx prisma dev` estiver ativo — o `migrate deploy` pode derrubar as conexões do Postgres embutido. Se acontecer, rode `npx prisma dev stop default` e suba de novo com `npx prisma dev`.
 
 ### 4. Armazenamento de imagens (Vercel Blob)
