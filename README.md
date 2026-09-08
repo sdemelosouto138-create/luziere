@@ -128,6 +128,8 @@ O comando de build (`prisma generate && prisma migrate deploy && next build`) j�
 2. A Vercel adiciona sozinha a variável `BLOB_READ_WRITE_TOKEN` ao projeto.
 3. Faça um novo deploy (**Deployments → Redeploy**). A partir daí, as fotos de produto vão para o Blob.
 
+Funciona com store **público** (URL direta do Blob) ou **privado** (o app serve a imagem em `/api/imagens/...`, lendo com o token). Para checar a configuração em produção, abra `/api/upload` logado: ele responde `blobConfigurado: true/false`. Se a variável aparecer na Vercel mas o upload reclamar que está vazia, edite-a e cole o token do store (aba *Quickstart* do store, começa com `vercel_blob_rw_`).
+
 ### 5. Dados de exemplo em produção (opcional)
 
 Para popular o banco de produção com os dados de exemplo, rode localmente apontando para o Neon:
