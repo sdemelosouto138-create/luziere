@@ -25,8 +25,11 @@ export async function salvarImagem(arquivo: File): Promise<string> {
 
   if (process.env.VERCEL) {
     // Na Vercel o sistema de arquivos é somente leitura: sem o Blob não há onde salvar.
+    const definidaMasVazia = "BLOB_READ_WRITE_TOKEN" in process.env;
     throw new Error(
-      "Armazenamento de imagens não configurado: crie um store Vercel Blob, conecte ao projeto (variável BLOB_READ_WRITE_TOKEN) e faça um Redeploy.",
+      definidaMasVazia
+        ? "A variável BLOB_READ_WRITE_TOKEN existe na Vercel mas está VAZIA. Edite-a em Settings → Environment Variables, cole o token do store Blob (começa com vercel_blob_rw_) e faça um Redeploy."
+        : "Armazenamento de imagens não configurado: crie um store Vercel Blob, conecte ao projeto (variável BLOB_READ_WRITE_TOKEN) e faça um Redeploy.",
     );
   }
 
