@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import { salvarImagem } from "@/lib/storage";
 
+/** Diagnóstico: informa se o armazenamento de imagens está configurado (sem expor segredos). */
+export async function GET() {
+  return NextResponse.json({
+    vercel: Boolean(process.env.VERCEL),
+    blobConfigurado: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+    variaveisBlob: Object.keys(process.env).filter((k) => k.includes("BLOB")),
+  });
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const arquivo = formData.get("arquivo");
