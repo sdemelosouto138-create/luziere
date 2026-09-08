@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/pedidos/status-badge";
+import { PedidoExcluirButton } from "@/components/pedidos/pedido-excluir-button";
 import { formatarData, formatarMoeda } from "@/lib/format";
 import { calcularTotalPedido } from "@/lib/pedido";
 
@@ -104,12 +105,13 @@ export default function PedidosPage() {
               <TableHead>Data</TableHead>
               <TableHead>Valor total</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="w-12 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {!carregando && pedidos.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   Nenhum pedido encontrado.
                 </TableCell>
               </TableRow>
@@ -132,6 +134,15 @@ export default function PedidosPage() {
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={pedido.status} />
+                </TableCell>
+                <TableCell className="text-right">
+                  <PedidoExcluirButton
+                    pedidoId={pedido.id}
+                    numero={pedido.numero}
+                    status={pedido.status}
+                    variante="icone"
+                    aoExcluir={carregar}
+                  />
                 </TableCell>
               </TableRow>
             ))}

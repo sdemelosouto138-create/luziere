@@ -69,3 +69,40 @@ export async function PUT(request: Request, { params }: RouteContext<"/api/pedid
 
   return NextResponse.json(serializarPedido(pedido));
 }
+
+export async function DELETE(_request: Request, { params }: RouteContext<"/api/pedidos/[id]">) {
+  const { id } = await params;
+
+  const pedido = await prisma.pedido.findUnique({ where: { id }, include: { itens: true } });
+  if (!pedido) {
+    return NextResponse.json({ erro: "Pedido não encontrado." }, { status: 404 });
+  }
+
+  // Se o estoque já foi baixado (aprovado/concluído), devolve os itens antes de excluir.
+  const estoqueFoiBaixado = pedido.status === "APROVADO" || pedido.status === "CONCLUIDO";
+
+  await prisma.$transaction(async (tx) => {
+    if (estoqueFoiBaixado) {
+      for (const item of pedido.itens) {
+        await tx.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { increment: item.quantidade } },
+        });
+        await tx.movimentacaoEstoque.create({
+          data: {
+            produtoId: item.produtoId,
+            tipo: "CANCELAMENTO",
+            quantidade: item.quantidade,
+            motivo: `Devolução ao estoque por exclusão do pedido #${pedido.numero}`,
+          },
+        });
+      }
+    }
+
+    // Movimentações antigas ligadas ao pedido ficam no histórico (o vínculo vira nulo).
+    await tx.movimentacaoEstoque.updateMany({ where: { pedidoId: id }, data: { pedidoId: null } });
+    await tx.pedido.delete({ where: { id } });
+  });
+
+  return NextResponse.json({ ok: true, estoqueDevolvido: estoqueFoiBaixado });
+}

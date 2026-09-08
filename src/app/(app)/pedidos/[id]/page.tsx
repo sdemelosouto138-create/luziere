@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/pedidos/status-badge";
 import { PedidoStatusActions } from "@/components/pedidos/pedido-status-actions";
+import { PedidoExcluirButton } from "@/components/pedidos/pedido-excluir-button";
 import { formatarData, formatarMoeda } from "@/lib/format";
 import { calcularSubtotalItens, calcularValorDesconto, calcularTotalPedido } from "@/lib/pedido";
 
@@ -61,6 +62,7 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
               </Link>
             </Button>
           )}
+          <PedidoExcluirButton pedidoId={pedido.id} numero={pedido.numero} status={pedido.status} />
         </div>
       </div>
 
