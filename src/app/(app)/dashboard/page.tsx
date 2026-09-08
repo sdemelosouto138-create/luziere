@@ -82,7 +82,7 @@ export default async function DashboardPage() {
               <CardTitle className="text-sm font-normal text-muted-foreground">{card.titulo}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className={`font-serif text-2xl ${card.destaque ? "text-primary" : card.alerta ? "text-destructive" : "text-foreground"}`}>
+              <p className={`font-sans text-2xl font-semibold tabular-nums tracking-tight ${card.destaque ? "text-primary" : card.alerta ? "text-destructive" : "text-foreground"}`}>
                 {card.valor}
               </p>
               {card.sub && <p className="mt-0.5 text-xs text-muted-foreground">{card.sub}</p>}

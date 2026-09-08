@@ -49,6 +49,9 @@ next-env.d.ts
 # uploads locais (dev sem Vercel Blob configurado)
 /public/uploads
 
+# configuração local do preview do Claude Code
+/.claude/launch.json
+
 # skills geradas pelo `prisma skills sync` para outras ferramentas de IA
 /.agents
 /.cursor
