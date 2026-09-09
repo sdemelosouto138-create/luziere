@@ -235,7 +235,7 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar produto pelo nome..."
+                placeholder="Buscar produto por nome ou código..."
                 value={buscaProduto}
                 onChange={(e) => setBuscaProduto(e.target.value)}
                 className="pl-9"
@@ -301,6 +301,7 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{produto.nome}</p>
                     <p className="text-xs text-muted-foreground">
+                      {produto.sku ? `${produto.sku} · ` : ""}
                       {produto.categoria.nome} · {produto.estoqueAtual} un. em estoque
                     </p>
                   </div>

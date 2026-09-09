@@ -110,7 +110,7 @@ export default function ProdutosPage() {
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome..."
+            placeholder="Buscar por nome ou código..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="pl-9"
@@ -164,7 +164,12 @@ export default function ProdutosPage() {
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="font-medium">{produto.nome}</TableCell>
+                <TableCell className="font-medium">
+                  {produto.nome}
+                  {produto.sku && (
+                    <span className="block text-xs font-normal text-muted-foreground">{produto.sku}</span>
+                  )}
+                </TableCell>
                 <TableCell>{produto.categoria.nome}</TableCell>
                 <TableCell>{formatarMoeda(produto.precoVenda)}</TableCell>
                 <TableCell>
