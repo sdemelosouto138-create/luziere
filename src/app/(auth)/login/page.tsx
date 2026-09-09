@@ -58,14 +58,14 @@ function LoginForm() {
         <div className="mb-10 flex flex-col items-center gap-3 text-center">
           <Image
             src="/logo-simbolo-escuro.png"
-            alt="Símbolo Luzière"
+            alt="Símbolo Luziére"
             width={88}
             height={97}
             className="size-22 rounded-2xl object-cover shadow-lg"
             priority
           />
           <span className="font-serif text-4xl tracking-wide text-[#f2efe9]">
-            Luzi<span className="text-[#e8b44a]">è</span>re
+            Luzi<span className="text-[#e8b44a]">é</span>re
           </span>
           <span className="text-sm uppercase tracking-[0.3em] text-[#b3ab9c]">
             Gestão de Vendas

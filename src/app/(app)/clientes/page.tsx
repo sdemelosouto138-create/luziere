@@ -72,7 +72,7 @@ export default function ClientesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-3xl text-foreground">Clientes</h1>
-          <p className="mt-1 text-muted-foreground">Cadastro de clientes da Luzière.</p>
+          <p className="mt-1 text-muted-foreground">Cadastro de clientes da Luziére.</p>
         </div>
         <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
           <Link href="/clientes/novo">

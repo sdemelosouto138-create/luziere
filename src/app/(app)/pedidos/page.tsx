@@ -60,7 +60,7 @@ export default function PedidosPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-3xl text-foreground">Pedidos e orçamentos</h1>
-          <p className="mt-1 text-muted-foreground">Todos os orçamentos e pedidos da Luzière.</p>
+          <p className="mt-1 text-muted-foreground">Todos os orçamentos e pedidos da Luziére.</p>
         </div>
         <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
           <Link href="/pedidos/novo">

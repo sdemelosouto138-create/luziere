@@ -53,7 +53,7 @@ export async function GET(_request: Request, { params }: RouteContext<"/api/pedi
     },
     itens,
     loja: {
-      nome: process.env.LOJA_NOME || "Luzière",
+      nome: process.env.LOJA_NOME || "Luziére",
       telefone: process.env.LOJA_TELEFONE || "",
       email: process.env.LOJA_EMAIL || "",
       endereco: process.env.LOJA_ENDERECO || "",

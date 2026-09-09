@@ -1,6 +1,6 @@
-# Luzière — Sistema de Gestão de Vendas
+# Luziére — Sistema de Gestão de Vendas
 
-Sistema interno (usuário único) para gestão de vendas de artigos de iluminação da **Luzière**: cadastro de produtos com fotos, catálogo visual para mostrar ao cliente, clientes, orçamentos/pedidos com geração de PDF, controle de estoque com histórico, relatórios e dashboard.
+Sistema interno (usuário único) para gestão de vendas de artigos de iluminação da **Luziére**: cadastro de produtos com fotos, catálogo visual para mostrar ao cliente, clientes, orçamentos/pedidos com geração de PDF, controle de estoque com histórico, relatórios e dashboard.
 
 Interface 100% em português, moeda em R$ e datas em dd/mm/aaaa. Funciona no computador e no celular (menu inferior no mobile).
 
@@ -100,7 +100,7 @@ Para ver os dados direto no banco: `npm run db:studio`.
 1. Crie um repositório no GitHub e envie a pasta `luziere`:
 
 ```bash
-git init && git add . && git commit -m "Luzière: sistema de gestão de vendas"
+git init && git add . && git commit -m "Luziére: sistema de gestão de vendas"
 ```
 
 ```bash
@@ -150,7 +150,7 @@ A Vercel gera um link (`https://luziere-xxx.vercel.app`). Abra no computador ou 
 - `public/logo-simbolo-claro.png` — símbolo em fundo creme (cabeçalho do PDF).
 - `brand/moodboard.png` e `brand/logo-horizontal-claro.png` — material de referência da marca (não é servido pelo site).
 
-O wordmark "Luzière" é renderizado em tipografia (Playfair Display) ao lado do símbolo. Para trocar a logo, substitua os PNGs mantendo os nomes; se tiver a versão em SVG com fundo transparente, troque as referências em `src/components/layout/sidebar.tsx`, `src/app/(auth)/login/page.tsx` e `src/components/pdf/orcamento-pdf.tsx` (o PDF aceita PNG/JPG, não SVG).
+O wordmark "Luziére" é renderizado em tipografia (Playfair Display) ao lado do símbolo. Para trocar a logo, substitua os PNGs mantendo os nomes; se tiver a versão em SVG com fundo transparente, troque as referências em `src/components/layout/sidebar.tsx`, `src/app/(auth)/login/page.tsx` e `src/components/pdf/orcamento-pdf.tsx` (o PDF aceita PNG/JPG, não SVG).
 
 ## Estrutura de pastas
 

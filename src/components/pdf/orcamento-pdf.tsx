@@ -270,7 +270,7 @@ export function OrcamentoPdf({ dados }: { dados: OrcamentoPdfData }) {
             />
             <View>
               <Text style={styles.marca}>
-                Luzi<Text style={styles.marcaAccent}>è</Text>re
+                Luzi<Text style={styles.marcaAccent}>é</Text>re
               </Text>
               <Text style={styles.tagline}>ILUMINAÇÃO RESIDENCIAL</Text>
             </View>

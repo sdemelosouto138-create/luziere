@@ -13,8 +13,8 @@ const playfairDisplay = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Luzière — Gestão de Vendas",
-  description: "Sistema interno de gestão de vendas da Luzière.",
+  title: "Luziére — Gestão de Vendas",
+  description: "Sistema interno de gestão de vendas da Luziére.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

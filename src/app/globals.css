@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ===== Identidade visual Luzière ===== */
+/* ===== Identidade visual Luziére ===== */
 :root {
   --background: #f2efe9; /* off-white / creme */
   --foreground: #2b2b2b; /* grafite */

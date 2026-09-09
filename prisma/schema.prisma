@@ -1,4 +1,4 @@
-// Schema do banco de dados do sistema Luzière.
+// Schema do banco de dados do sistema Luziére.
 // Usamos PostgreSQL tanto em desenvolvimento quanto em produção (via Neon ou Supabase).
 // A string de conexão fica em DATABASE_URL (.env) e é lida por prisma.config.ts (CLI)
 // e por src/lib/prisma.ts (aplicação, via driver adapter @prisma/adapter-pg).

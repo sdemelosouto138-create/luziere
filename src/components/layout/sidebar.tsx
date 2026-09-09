@@ -22,7 +22,7 @@ export function Sidebar() {
       <div className="flex items-center gap-3 px-5 py-7">
         <Image
           src="/logo-simbolo-escuro.png"
-          alt="Símbolo Luzière"
+          alt="Símbolo Luziére"
           width={44}
           height={49}
           className="size-11 rounded-xl object-cover"
@@ -30,7 +30,7 @@ export function Sidebar() {
         />
         <div className="flex flex-col">
           <span className="font-serif text-2xl leading-none tracking-wide">
-            Luzi<span className="text-sidebar-primary">è</span>re
+            Luzi<span className="text-sidebar-primary">é</span>re
           </span>
           <span className="mt-1 text-[10px] uppercase tracking-[0.3em] text-sidebar-foreground/50">
             Gestão de Vendas

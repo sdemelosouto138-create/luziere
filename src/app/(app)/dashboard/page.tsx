@@ -73,7 +73,7 @@ export default async function DashboardPage() {
   return (
     <div>
       <h1 className="font-serif text-3xl text-foreground">Dashboard</h1>
-      <p className="mt-1 text-muted-foreground">Visão geral da Luzière em {formatadorMes.format(agora).replace(".", "")}/{agora.getFullYear()}.</p>
+      <p className="mt-1 text-muted-foreground">Visão geral da Luziére em {formatadorMes.format(agora).replace(".", "")}/{agora.getFullYear()}.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
         {cards.map((card) => (
