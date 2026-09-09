@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Trash2 } from "lucide-react";
+import Image from "next/image";
+import { Search, Trash2, Plus, ImageOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +19,19 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatarMoeda } from "@/lib/format";
 import { calcularSubtotalItens, calcularValorDesconto } from "@/lib/pedido";
+import { cn } from "@/lib/utils";
 
 type Cliente = { id: string; nome: string };
-type Produto = { id: string; nome: string; sku: string | null; precoVenda: number; estoqueAtual: number };
+type Categoria = { id: string; nome: string };
+type Produto = {
+  id: string;
+  nome: string;
+  sku: string | null;
+  precoVenda: number;
+  estoqueAtual: number;
+  categoria: { id: string; nome: string };
+  imagens: { url: string }[];
+};
 
 type ItemLinha = {
   produtoId: string;
@@ -66,9 +77,11 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
   const [observacoes, setObservacoes] = useState(pedido?.observacoes ?? "");
   const [validadeDias, setValidadeDias] = useState(pedido?.validadeDias?.toString() ?? "7");
 
+  // Catálogo carregado uma vez: permite filtrar por categoria e buscar sem esperar o servidor.
+  const [catalogo, setCatalogo] = useState<Produto[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaFiltro, setCategoriaFiltro] = useState("todas");
   const [buscaProduto, setBuscaProduto] = useState("");
-  const [resultados, setResultados] = useState<Produto[]>([]);
-  const [mostrarResultados, setMostrarResultados] = useState(false);
 
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -77,20 +90,30 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
     fetch("/api/clientes")
       .then((r) => r.json())
       .then(setClientes);
+    fetch("/api/categorias")
+      .then((r) => r.json())
+      .then(setCategorias);
+    fetch("/api/produtos")
+      .then((r) => r.json())
+      .then(setCatalogo);
   }, []);
 
-  useEffect(() => {
-    if (!buscaProduto.trim()) {
-      setResultados([]);
-      return;
-    }
-    const timeout = setTimeout(() => {
-      fetch(`/api/produtos?busca=${encodeURIComponent(buscaProduto)}`)
-        .then((r) => r.json())
-        .then(setResultados);
-    }, 250);
-    return () => clearTimeout(timeout);
-  }, [buscaProduto]);
+  const produtosFiltrados = useMemo(() => {
+    const termo = buscaProduto.trim().toLowerCase();
+    return catalogo.filter((produto) => {
+      const daCategoria = categoriaFiltro === "todas" || produto.categoria.id === categoriaFiltro;
+      const combinaBusca =
+        !termo ||
+        produto.nome.toLowerCase().includes(termo) ||
+        (produto.sku ?? "").toLowerCase().includes(termo);
+      return daCategoria && combinaBusca;
+    });
+  }, [catalogo, categoriaFiltro, buscaProduto]);
+
+  const quantidadePorProduto = useMemo(
+    () => new Map(itens.map((i) => [i.produtoId, i.quantidade])),
+    [itens],
+  );
 
   function adicionarItem(produto: Produto) {
     setItens((prev) => {
@@ -103,9 +126,6 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
         { produtoId: produto.id, nome: produto.nome, sku: produto.sku, quantidade: 1, precoUnitario: produto.precoVenda },
       ];
     });
-    setBuscaProduto("");
-    setResultados([]);
-    setMostrarResultados(false);
   }
 
   function atualizarItem(produtoId: string, campo: "quantidade" | "precoUnitario", valor: number) {
@@ -209,36 +229,98 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
 
       <div className="space-y-3">
         <Label>Itens</Label>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar produto pelo nome..."
-            value={buscaProduto}
-            onChange={(e) => {
-              setBuscaProduto(e.target.value);
-              setMostrarResultados(true);
-            }}
-            onFocus={() => setMostrarResultados(true)}
-            className="pl-9"
-          />
-          {mostrarResultados && resultados.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover shadow-md">
-              {resultados.map((produto) => (
+        {/* Seletor de produtos: filtra por categoria e/ou nome, sem precisar decorar nomes. */}
+        <div className="rounded-xl border border-border">
+          <div className="space-y-3 border-b border-border p-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar produto pelo nome..."
+                value={buscaProduto}
+                onChange={(e) => setBuscaProduto(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              <button
+                type="button"
+                onClick={() => setCategoriaFiltro("todas")}
+                className={cn(
+                  "shrink-0 rounded-full border px-3 py-1.5 text-xs transition-colors",
+                  categoriaFiltro === "todas"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border text-muted-foreground hover:bg-secondary",
+                )}
+              >
+                Todos
+              </button>
+              {categorias.map((categoria) => (
+                <button
+                  type="button"
+                  key={categoria.id}
+                  onClick={() => setCategoriaFiltro(categoria.id)}
+                  className={cn(
+                    "shrink-0 rounded-full border px-3 py-1.5 text-xs transition-colors",
+                    categoriaFiltro === categoria.id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground hover:bg-secondary",
+                  )}
+                >
+                  {categoria.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto">
+            {produtosFiltrados.length === 0 && (
+              <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+                {catalogo.length === 0 ? "Carregando produtos..." : "Nenhum produto nesta categoria."}
+              </p>
+            )}
+            {produtosFiltrados.map((produto) => {
+              const jaAdicionado = quantidadePorProduto.get(produto.id);
+              return (
                 <button
                   type="button"
                   key={produto.id}
                   onClick={() => adicionarItem(produto)}
-                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-secondary"
+                  className="flex w-full items-center gap-3 border-b border-border px-3 py-2.5 text-left last:border-b-0 hover:bg-secondary/60"
                 >
-                  <span>
-                    {produto.nome}
-                    {produto.sku && <span className="text-muted-foreground"> ({produto.sku})</span>}
-                  </span>
-                  <span className="text-muted-foreground">{formatarMoeda(produto.precoVenda)}</span>
+                  <div className="relative size-9 shrink-0 overflow-hidden rounded-md border border-border bg-secondary">
+                    {produto.imagens[0] ? (
+                      <Image src={produto.imagens[0].url} alt="" fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="flex size-full items-center justify-center text-muted-foreground">
+                        <ImageOff className="size-3.5" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{produto.nome}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {produto.categoria.nome} · {produto.estoqueAtual} un. em estoque
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-sm tabular-nums">{formatarMoeda(produto.precoVenda)}</span>
+                    {jaAdicionado ? (
+                      <span className="flex size-7 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">
+                        {jaAdicionado}
+                      </span>
+                    ) : (
+                      <span className="flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground">
+                        <Plus className="size-4" />
+                      </span>
+                    )}
+                  </div>
                 </button>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-border">
