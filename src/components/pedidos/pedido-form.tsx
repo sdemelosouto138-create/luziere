@@ -58,6 +58,7 @@ type PedidoExistente = {
   condicaoPagamento: string | null;
   observacoes: string | null;
   validadeDias: number;
+  ambientes: string[];
   itens: {
     produtoId: string;
     produto: { nome: string; sku: string | null };
@@ -85,11 +86,11 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
   );
 
   // Ambientes do pedido (ex.: Quarto, Sacada). Vazio = pedido sem separação.
+  // Vêm salvos no pedido, então um ambiente sem itens não se perde.
   const [ambientes, setAmbientes] = useState<string[]>(() => {
-    const nomes = (pedido?.itens ?? [])
-      .map((i) => i.ambiente)
-      .filter((a): a is string => Boolean(a));
-    return [...new Set(nomes)];
+    const salvos = pedido?.ambientes ?? [];
+    const dosItens = (pedido?.itens ?? []).map((i) => i.ambiente).filter((a): a is string => Boolean(a));
+    return [...new Set([...salvos, ...dosItens])];
   });
   const [ambienteAtual, setAmbienteAtual] = useState<string | null>(null);
   const [novoAmbiente, setNovoAmbiente] = useState("");
@@ -144,16 +145,17 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
     [itens, ambienteAtual],
   );
 
-  // Agrupa os itens por ambiente, na ordem em que cada ambiente apareceu.
+  // Agrupa por ambiente, na ordem em que foram criados. Ambientes sem itens
+  // continuam aparecendo, para não sumirem enquanto o orçamento é montado.
   const gruposDeItens = useMemo(() => {
-    const grupos: { ambiente: string | null; itens: ItemLinha[] }[] = [];
-    for (const item of itens) {
-      const grupo = grupos.find((g) => g.ambiente === item.ambiente);
-      if (grupo) grupo.itens.push(item);
-      else grupos.push({ ambiente: item.ambiente, itens: [item] });
-    }
+    const grupos: { ambiente: string | null; itens: ItemLinha[] }[] = ambientes.map((nome) => ({
+      ambiente: nome,
+      itens: itens.filter((i) => i.ambiente === nome),
+    }));
+    const semAmbiente = itens.filter((i) => !i.ambiente);
+    if (semAmbiente.length > 0) grupos.unshift({ ambiente: null, itens: semAmbiente });
     return grupos;
-  }, [itens]);
+  }, [itens, ambientes]);
 
   function adicionarItem(produto: Produto) {
     setItens((prev) => {
@@ -236,6 +238,7 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
       condicaoPagamento: condicaoPagamento || null,
       observacoes: observacoes || null,
       validadeDias: Number(validadeDias) || 7,
+      ambientes,
     };
 
     try {
@@ -479,7 +482,7 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {itens.length === 0 && (
+              {itens.length === 0 && ambientes.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
                     Nenhum item adicionado.
@@ -498,6 +501,13 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
                         {formatarMoeda(
                           grupo.itens.reduce((soma, i) => soma + i.quantidade * i.precoUnitario, 0),
                         )}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {grupo.itens.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-3 text-center text-xs text-muted-foreground">
+                        Nenhum item neste ambiente ainda.
                       </TableCell>
                     </TableRow>
                   )}

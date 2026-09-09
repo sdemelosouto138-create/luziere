@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { apenasDigitosCep, buscarEnderecoPorCep, formatarCep } from "@/lib/cep";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +43,35 @@ export function ClienteForm({ cliente }: { cliente?: ClienteExistente }) {
 
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  // Preenchimento automático do endereço a partir do CEP.
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const [avisoCep, setAvisoCep] = useState<string | null>(null);
+  const numeroRef = useRef<HTMLInputElement>(null);
+
+  async function handleCepChange(valor: string) {
+    const formatado = formatarCep(valor);
+    setCep(formatado);
+    setAvisoCep(null);
+
+    if (apenasDigitosCep(formatado).length !== 8) return;
+
+    setBuscandoCep(true);
+    const endereco = await buscarEnderecoPorCep(formatado);
+    setBuscandoCep(false);
+
+    if (!endereco) {
+      setAvisoCep("CEP não encontrado. Preencha o endereço manualmente.");
+      return;
+    }
+
+    // Campos vazios (ex.: CEP geral de cidade) não apagam o que já foi digitado.
+    if (endereco.rua) setRua(endereco.rua);
+    if (endereco.bairro) setBairro(endereco.bairro);
+    if (endereco.cidade) setCidade(endereco.cidade);
+    if (endereco.uf) setUf(endereco.uf);
+    numeroRef.current?.focus();
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -98,7 +129,23 @@ export function ClienteForm({ cliente }: { cliente?: ClienteExistente }) {
 
         <div className="space-y-2">
           <Label htmlFor="cep">CEP</Label>
-          <Input id="cep" value={cep ?? ""} onChange={(e) => setCep(e.target.value)} />
+          <div className="relative">
+            <Input
+              id="cep"
+              value={cep ?? ""}
+              onChange={(e) => handleCepChange(e.target.value)}
+              placeholder="00000-000"
+              inputMode="numeric"
+            />
+            {buscandoCep && (
+              <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          {avisoCep ? (
+            <p className="text-xs text-destructive">{avisoCep}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">O endereço é preenchido automaticamente.</p>
+          )}
         </div>
 
         <div className="space-y-2 sm:col-span-2">
@@ -108,7 +155,7 @@ export function ClienteForm({ cliente }: { cliente?: ClienteExistente }) {
 
         <div className="space-y-2">
           <Label htmlFor="numero">Número</Label>
-          <Input id="numero" value={numero ?? ""} onChange={(e) => setNumero(e.target.value)} />
+          <Input id="numero" ref={numeroRef} value={numero ?? ""} onChange={(e) => setNumero(e.target.value)} />
         </div>
 
         <div className="space-y-2">

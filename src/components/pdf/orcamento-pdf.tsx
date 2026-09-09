@@ -275,6 +275,8 @@ export function OrcamentoPdf({ dados }: { dados: OrcamentoPdfData }) {
     if (grupo) grupo.itens.push(item);
     else gruposDeItens.push({ ambiente: item.ambiente, itens: [item] });
   }
+  // Ambiente sem itens não entra no PDF do cliente, para não deixar seção vazia.
+  const gruposComItens = gruposDeItens.filter((g) => g.itens.length > 0);
   const temAmbientes = dados.itens.some((i) => i.ambiente);
 
   const enderecoCliente = [
@@ -333,7 +335,7 @@ export function OrcamentoPdf({ dados }: { dados: OrcamentoPdfData }) {
               <Text style={[styles.tabelaHeaderTexto, styles.colPreco]}>Preço unit.</Text>
               <Text style={[styles.tabelaHeaderTexto, styles.colSubtotal]}>Subtotal</Text>
             </View>
-            {gruposDeItens.map((grupo, indiceGrupo) => (
+            {gruposComItens.map((grupo, indiceGrupo) => (
               <View key={indiceGrupo}>
                 {/* Cabeçalho do ambiente (Quarto, Sacada...), com o subtotal daquele trecho. */}
                 {temAmbientes ? (

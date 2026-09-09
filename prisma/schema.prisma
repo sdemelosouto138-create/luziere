@@ -122,6 +122,9 @@ model Pedido {
   condicaoPagamento String?
   observacoes       String?
   validadeDias      Int          @default(7)
+  // Ambientes do pedido (Quarto, Sacada...) na ordem definida na montagem.
+  // Ficam salvos mesmo sem itens, para não perder o rascunho do orçamento.
+  ambientes         String[]     @default([])
   criadoEm          DateTime     @default(now())
   atualizadoEm      DateTime     @updatedAt
 

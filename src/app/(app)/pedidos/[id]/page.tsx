@@ -28,14 +28,15 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
     precoUnitario: Number(i.precoUnitario),
     subtotal: Number(i.subtotal),
   }));
-  // Agrupa por ambiente (Quarto, Sacada...), preservando a ordem da montagem.
-  const grupos: { ambiente: string | null; itens: typeof itens }[] = [];
-  for (const item of itens) {
-    const grupo = grupos.find((g) => g.ambiente === item.ambiente);
-    if (grupo) grupo.itens.push(item);
-    else grupos.push({ ambiente: item.ambiente, itens: [item] });
-  }
-  const temAmbientes = itens.some((i) => i.ambiente);
+  // Agrupa por ambiente (Quarto, Sacada...) na ordem definida na montagem.
+  // Ambientes ainda sem itens continuam listados, para o pedido não parecer incompleto.
+  const grupos: { ambiente: string | null; itens: typeof itens }[] = pedido.ambientes.map((nome) => ({
+    ambiente: nome,
+    itens: itens.filter((i) => i.ambiente === nome),
+  }));
+  const semAmbiente = itens.filter((i) => !i.ambiente);
+  if (semAmbiente.length > 0) grupos.unshift({ ambiente: null, itens: semAmbiente });
+  const temAmbientes = pedido.ambientes.length > 0;
 
   const subtotal = calcularSubtotalItens(itens);
   const valorDesconto = calcularValorDesconto(subtotal, Number(pedido.desconto), pedido.descontoTipo);
@@ -100,6 +101,13 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
                     </TableCell>
                     <TableCell className="py-2 text-xs font-semibold">
                       {formatarMoeda(grupo.itens.reduce((soma, i) => soma + i.subtotal, 0))}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {grupo.itens.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-3 text-center text-xs text-muted-foreground">
+                      Nenhum item neste ambiente.
                     </TableCell>
                   </TableRow>
                 )}

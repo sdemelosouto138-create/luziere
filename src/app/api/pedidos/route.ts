@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       condicaoPagamento: dados.condicaoPagamento || null,
       observacoes: dados.observacoes || null,
       validadeDias: dados.validadeDias,
+      ambientes: dados.ambientes,
       itens: {
         create: dados.itens.map((item, ordem) => ({
           produtoId: item.produtoId,

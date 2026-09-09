@@ -17,6 +17,8 @@ export const pedidoSchema = z.object({
   condicaoPagamento: z.string().trim().optional().nullable(),
   observacoes: z.string().trim().optional().nullable(),
   validadeDias: z.coerce.number().int().min(1).default(7),
+  /** Ambientes criados na montagem, mesmo os que ainda não têm itens. */
+  ambientes: z.array(z.string().trim().min(1)).optional().default([]),
 });
 
 export type PedidoInput = z.infer<typeof pedidoSchema>;

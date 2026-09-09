@@ -34,6 +34,7 @@ export default async function EditarPedidoPage({ params }: PageProps<"/pedidos/[
             condicaoPagamento: pedido.condicaoPagamento,
             observacoes: pedido.observacoes,
             validadeDias: pedido.validadeDias,
+            ambientes: pedido.ambientes,
             itens: pedido.itens.map((i) => ({
               produtoId: i.produtoId,
               produto: { nome: i.produto.nome, sku: i.produto.sku },
