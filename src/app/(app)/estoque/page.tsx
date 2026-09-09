@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 type Produto = {
   id: string;
   nome: string;
-  sku: string;
+  sku: string | null;
   estoqueAtual: number;
   estoqueMinimo: number;
   unidade: string;
@@ -42,7 +42,7 @@ type Movimentacao = {
   quantidade: number;
   motivo: string | null;
   criadoEm: string;
-  produto: { nome: string; sku: string };
+  produto: { nome: string; sku: string | null };
   pedido: { numero: number } | null;
 };
 
@@ -150,7 +150,7 @@ export default function EstoquePage() {
                 <TableRow key={produto.id} className={cn(baixo && "bg-destructive/5")}>
                   <TableCell>
                     <p className={cn("font-medium", baixo && "text-destructive")}>{produto.nome}</p>
-                    <p className="text-xs text-muted-foreground">{produto.sku}</p>
+                    {produto.sku && <p className="text-xs text-muted-foreground">{produto.sku}</p>}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{produto.categoria.nome}</TableCell>
                   <TableCell className={cn("text-right font-medium", baixo && "text-destructive")}>
@@ -203,7 +203,7 @@ export default function EstoquePage() {
                   </TableCell>
                   <TableCell>
                     <p className="font-medium">{mov.produto.nome}</p>
-                    <p className="text-xs text-muted-foreground">{mov.produto.sku}</p>
+                    {mov.produto.sku && <p className="text-xs text-muted-foreground">{mov.produto.sku}</p>}
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     <span className={cn("inline-flex items-center gap-1", entrada ? "text-emerald-600" : "text-destructive")}>

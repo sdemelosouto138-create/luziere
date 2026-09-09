@@ -85,7 +85,7 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
               <TableRow key={item.id}>
                 <TableCell>
                   <p className="font-medium">{item.produto.nome}</p>
-                  <p className="text-xs text-muted-foreground">{item.produto.sku}</p>
+                  {item.produto.sku && <p className="text-xs text-muted-foreground">{item.produto.sku}</p>}
                 </TableCell>
                 <TableCell>{item.quantidade}</TableCell>
                 <TableCell>{formatarMoeda(item.precoUnitario)}</TableCell>

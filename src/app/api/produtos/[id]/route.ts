@@ -33,9 +33,12 @@ export async function PUT(request: Request, { params }: RouteContext<"/api/produ
     return NextResponse.json({ erro: "Produto não encontrado." }, { status: 404 });
   }
 
-  const skuEmUso = await prisma.produto.findFirst({ where: { sku: dados.sku, NOT: { id } } });
-  if (skuEmUso) {
-    return NextResponse.json({ erro: "Já existe outro produto com esse SKU." }, { status: 409 });
+  // O SKU é opcional; só verificamos duplicidade quando for informado.
+  if (dados.sku) {
+    const skuEmUso = await prisma.produto.findFirst({ where: { sku: dados.sku, NOT: { id } } });
+    if (skuEmUso) {
+      return NextResponse.json({ erro: "Já existe outro produto com esse código." }, { status: 409 });
+    }
   }
 
   const diferencaEstoque = dados.estoqueAtual - produtoAtual.estoqueAtual;
@@ -47,7 +50,7 @@ export async function PUT(request: Request, { params }: RouteContext<"/api/produ
       where: { id },
       data: {
         nome: dados.nome,
-        sku: dados.sku,
+        sku: dados.sku || null,
         descricao: dados.descricao || null,
         categoriaId: dados.categoriaId,
         precoCusto: dados.precoCusto,

@@ -235,7 +235,7 @@ export type OrcamentoPdfData = {
     quantidade: number;
     precoUnitario: number;
     subtotal: number;
-    produto: { nome: string; sku: string; unidade: string };
+    produto: { nome: string; sku: string | null; unidade: string };
   }[];
   loja: {
     nome: string;
@@ -310,7 +310,7 @@ export function OrcamentoPdf({ dados }: { dados: OrcamentoPdfData }) {
               <View style={styles.tabelaLinha} key={index} wrap={false}>
                 <View style={styles.colProduto}>
                   <Text style={styles.produtoNome}>{item.produto.nome}</Text>
-                  <Text style={styles.produtoSku}>{item.produto.sku}</Text>
+                  {item.produto.sku ? <Text style={styles.produtoSku}>{item.produto.sku}</Text> : null}
                 </View>
                 <Text style={styles.colQtd}>
                   {item.quantidade} {item.produto.unidade}

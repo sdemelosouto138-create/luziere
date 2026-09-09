@@ -65,7 +65,8 @@ export default async function FichaFornecedorPage({ params }: PageProps<"/fornec
                 <div>
                   <p className="text-sm font-medium text-foreground">{produto.nome}</p>
                   <p className="text-xs text-muted-foreground">
-                    {produto.sku} · {produto.categoria.nome}
+                    {produto.sku ? `${produto.sku} · ` : ""}
+                    {produto.categoria.nome}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-right">

@@ -23,7 +23,7 @@ type Fornecedor = { id: string; nome: string };
 type ProdutoExistente = {
   id: string;
   nome: string;
-  sku: string;
+  sku: string | null;
   descricao: string | null;
   categoriaId: string;
   precoCusto: number;
@@ -53,7 +53,8 @@ export function ProdutoForm({
 
   const [categorias, setCategorias] = useState(categoriasIniciais);
   const [nome, setNome] = useState(produto?.nome ?? "");
-  const [sku, setSku] = useState(produto?.sku ?? "");
+  // O código/SKU não é mais editado na tela, mas é preservado se o produto já tiver um.
+  const sku = produto?.sku ?? null;
   const [categoriaId, setCategoriaId] = useState(produto?.categoriaId ?? categoriasIniciais[0]?.id ?? "");
   const [descricao, setDescricao] = useState(produto?.descricao ?? "");
   const [precoCusto, setPrecoCusto] = useState(produto?.precoCusto?.toString() ?? "");
@@ -190,12 +191,7 @@ export function ProdutoForm({
           <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="sku">Código / SKU</Label>
-          <Input id="sku" value={sku} onChange={(e) => setSku(e.target.value)} required />
-        </div>
-
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2">
           <Label>Categoria</Label>
           {!mostrarNovaCategoria ? (
             <div className="flex gap-2">

@@ -24,7 +24,7 @@ model Categoria {
 model Produto {
   id             String    @id @default(cuid())
   nome           String
-  sku            String    @unique
+  sku            String?   @unique // código opcional; vazio quando a loja não usa SKU
   descricao      String?
   categoriaId    String
   categoria      Categoria @relation(fields: [categoriaId], references: [id])

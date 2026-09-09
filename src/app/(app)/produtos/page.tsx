@@ -38,7 +38,7 @@ import { formatarMoeda } from "@/lib/format";
 type Produto = {
   id: string;
   nome: string;
-  sku: string;
+  sku: string | null;
   precoVenda: number;
   estoqueAtual: number;
   estoqueMinimo: number;
@@ -110,7 +110,7 @@ export default function ProdutosPage() {
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome ou SKU..."
+            placeholder="Buscar por nome..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="pl-9"
@@ -137,7 +137,6 @@ export default function ProdutosPage() {
             <TableRow>
               <TableHead className="w-16"></TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>SKU</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Preço de venda</TableHead>
               <TableHead>Estoque</TableHead>
@@ -147,7 +146,7 @@ export default function ProdutosPage() {
           <TableBody>
             {!carregando && produtos.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   Nenhum produto encontrado.
                 </TableCell>
               </TableRow>
@@ -166,7 +165,6 @@ export default function ProdutosPage() {
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">{produto.nome}</TableCell>
-                <TableCell className="text-muted-foreground">{produto.sku}</TableCell>
                 <TableCell>{produto.categoria.nome}</TableCell>
                 <TableCell>{formatarMoeda(produto.precoVenda)}</TableCell>
                 <TableCell>

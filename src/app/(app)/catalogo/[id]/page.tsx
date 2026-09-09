@@ -71,10 +71,12 @@ export default async function DetalheCatalogoPage({ params }: PageProps<"/catalo
                 <dd className="font-medium text-foreground">{produto.temperaturaCor}</dd>
               </div>
             )}
-            <div>
-              <dt className="text-muted-foreground">SKU</dt>
-              <dd className="font-medium text-foreground">{produto.sku}</dd>
-            </div>
+            {produto.sku && (
+              <div>
+                <dt className="text-muted-foreground">Código</dt>
+                <dd className="font-medium text-foreground">{produto.sku}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </div>

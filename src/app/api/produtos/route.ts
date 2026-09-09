@@ -39,15 +39,18 @@ export async function POST(request: Request) {
 
   const dados = parsed.data;
 
-  const skuExistente = await prisma.produto.findUnique({ where: { sku: dados.sku } });
-  if (skuExistente) {
-    return NextResponse.json({ erro: "Já existe um produto com esse SKU." }, { status: 409 });
+  // O SKU é opcional; só verificamos duplicidade quando for informado.
+  if (dados.sku) {
+    const skuExistente = await prisma.produto.findUnique({ where: { sku: dados.sku } });
+    if (skuExistente) {
+      return NextResponse.json({ erro: "Já existe um produto com esse código." }, { status: 409 });
+    }
   }
 
   const produto = await prisma.produto.create({
     data: {
       nome: dados.nome,
-      sku: dados.sku,
+      sku: dados.sku || null,
       descricao: dados.descricao || null,
       categoriaId: dados.categoriaId,
       precoCusto: dados.precoCusto,

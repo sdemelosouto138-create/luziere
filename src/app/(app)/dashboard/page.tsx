@@ -175,7 +175,7 @@ export default async function DashboardPage() {
                 <li key={produto.id} className="flex items-center justify-between rounded-lg border border-border p-3 text-sm">
                   <span>
                     <span className="font-medium">{produto.nome}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">{produto.sku}</span>
+                    {produto.sku && <span className="ml-2 text-xs text-muted-foreground">{produto.sku}</span>}
                   </span>
                   <span className="text-destructive">
                     {produto.estoqueAtual} / mín. {produto.estoqueMinimo}

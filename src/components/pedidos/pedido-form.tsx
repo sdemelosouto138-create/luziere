@@ -20,12 +20,12 @@ import { formatarMoeda } from "@/lib/format";
 import { calcularSubtotalItens, calcularValorDesconto } from "@/lib/pedido";
 
 type Cliente = { id: string; nome: string };
-type Produto = { id: string; nome: string; sku: string; precoVenda: number; estoqueAtual: number };
+type Produto = { id: string; nome: string; sku: string | null; precoVenda: number; estoqueAtual: number };
 
 type ItemLinha = {
   produtoId: string;
   nome: string;
-  sku: string;
+  sku: string | null;
   quantidade: number;
   precoUnitario: number;
 };
@@ -40,7 +40,7 @@ type PedidoExistente = {
   condicaoPagamento: string | null;
   observacoes: string | null;
   validadeDias: number;
-  itens: { produtoId: string; produto: { nome: string; sku: string }; quantidade: number; precoUnitario: number }[];
+  itens: { produtoId: string; produto: { nome: string; sku: string | null }; quantidade: number; precoUnitario: number }[];
 };
 
 export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
@@ -212,7 +212,7 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar produto por nome ou SKU..."
+            placeholder="Buscar produto pelo nome..."
             value={buscaProduto}
             onChange={(e) => {
               setBuscaProduto(e.target.value);
@@ -231,7 +231,8 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
                   className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-secondary"
                 >
                   <span>
-                    {produto.nome} <span className="text-muted-foreground">({produto.sku})</span>
+                    {produto.nome}
+                    {produto.sku && <span className="text-muted-foreground"> ({produto.sku})</span>}
                   </span>
                   <span className="text-muted-foreground">{formatarMoeda(produto.precoVenda)}</span>
                 </button>
@@ -263,7 +264,7 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
                 <TableRow key={item.produtoId}>
                   <TableCell>
                     <p className="font-medium">{item.nome}</p>
-                    <p className="text-xs text-muted-foreground">{item.sku}</p>
+                    {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}
                   </TableCell>
                   <TableCell>
                     <Input
