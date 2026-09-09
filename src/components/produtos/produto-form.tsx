@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 
 type Categoria = { id: string; nome: string };
+type Fornecedor = { id: string; nome: string };
 
 type ProdutoExistente = {
   id: string;
@@ -32,7 +33,7 @@ type ProdutoExistente = {
   temperaturaCor: string | null;
   estoqueAtual: number;
   estoqueMinimo: number;
-  fornecedor: string | null;
+  fornecedorId: string | null;
   imagens: { url: string }[];
 };
 
@@ -40,9 +41,11 @@ const TEMPERATURAS = ["2700K", "3000K", "4000K", "6500K"];
 
 export function ProdutoForm({
   categoriasIniciais,
+  fornecedoresIniciais,
   produto,
 }: {
   categoriasIniciais: Categoria[];
+  fornecedoresIniciais: Fornecedor[];
   produto?: ProdutoExistente;
 }) {
   const router = useRouter();
@@ -60,7 +63,10 @@ export function ProdutoForm({
   const [temperaturaCor, setTemperaturaCor] = useState(produto?.temperaturaCor ?? "nenhuma");
   const [estoqueAtual, setEstoqueAtual] = useState(produto?.estoqueAtual?.toString() ?? "0");
   const [estoqueMinimo, setEstoqueMinimo] = useState(produto?.estoqueMinimo?.toString() ?? "0");
-  const [fornecedor, setFornecedor] = useState(produto?.fornecedor ?? "");
+  const [fornecedores, setFornecedores] = useState(fornecedoresIniciais);
+  const [fornecedorId, setFornecedorId] = useState(produto?.fornecedorId ?? "nenhum");
+  const [novoFornecedor, setNovoFornecedor] = useState("");
+  const [mostrarNovoFornecedor, setMostrarNovoFornecedor] = useState(false);
   const [imagens, setImagens] = useState<string[]>(produto?.imagens.map((i) => i.url) ?? []);
 
   const [novaCategoria, setNovaCategoria] = useState("");
@@ -82,6 +88,25 @@ export function ProdutoForm({
     setCategoriaId(categoria.id);
     setNovaCategoria("");
     setMostrarNovaCategoria(false);
+  }
+
+  async function handleAdicionarFornecedor() {
+    const nomeFornecedor = novoFornecedor.trim();
+    if (!nomeFornecedor) return;
+    const response = await fetch("/api/fornecedores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome: nomeFornecedor }),
+    });
+    const fornecedor = await response.json();
+    if (!response.ok) {
+      toast.error(fornecedor.erro ?? "Não foi possível criar o fornecedor.");
+      return;
+    }
+    setFornecedores((prev) => [...prev, fornecedor].sort((a, b) => a.nome.localeCompare(b.nome)));
+    setFornecedorId(fornecedor.id);
+    setNovoFornecedor("");
+    setMostrarNovoFornecedor(false);
   }
 
   async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -129,7 +154,7 @@ export function ProdutoForm({
       temperaturaCor: temperaturaCor === "nenhuma" ? null : temperaturaCor,
       estoqueAtual: Number(estoqueAtual),
       estoqueMinimo: Number(estoqueMinimo),
-      fornecedor: fornecedor || null,
+      fornecedorId: fornecedorId === "nenhum" ? null : fornecedorId,
       imagens,
     };
 
@@ -308,8 +333,45 @@ export function ProdutoForm({
         </div>
 
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="fornecedor">Fornecedor</Label>
-          <Input id="fornecedor" value={fornecedor ?? ""} onChange={(e) => setFornecedor(e.target.value)} />
+          <Label>Fornecedor</Label>
+          {!mostrarNovoFornecedor ? (
+            <div className="flex gap-2">
+              <Select value={fornecedorId} onValueChange={setFornecedorId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhum">Sem fornecedor</SelectItem>
+                  {fornecedores.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="outline" size="icon" onClick={() => setMostrarNovoFornecedor(true)}>
+                <Plus className="size-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                autoFocus
+                placeholder="Nome do novo fornecedor"
+                value={novoFornecedor}
+                onChange={(e) => setNovoFornecedor(e.target.value)}
+              />
+              <Button type="button" onClick={handleAdicionarFornecedor}>
+                Adicionar
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setMostrarNovoFornecedor(false)}>
+                Cancelar
+              </Button>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Dados completos do fornecedor ficam na seção Fornecedores do menu.
+          </p>
         </div>
       </div>
 

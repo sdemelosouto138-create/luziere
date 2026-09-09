@@ -5,12 +5,13 @@ import { ProdutoForm } from "@/components/produtos/produto-form";
 export default async function EditarProdutoPage({ params }: PageProps<"/produtos/[id]">) {
   const { id } = await params;
 
-  const [produto, categorias] = await Promise.all([
+  const [produto, categorias, fornecedores] = await Promise.all([
     prisma.produto.findUnique({
       where: { id },
       include: { imagens: { orderBy: { ordem: "asc" } } },
     }),
     prisma.categoria.findMany({ orderBy: { nome: "asc" } }),
+    prisma.fornecedor.findMany({ select: { id: true, nome: true }, orderBy: { nome: "asc" } }),
   ]);
 
   if (!produto) {
@@ -25,6 +26,7 @@ export default async function EditarProdutoPage({ params }: PageProps<"/produtos
       <div className="mt-8">
         <ProdutoForm
           categoriasIniciais={categorias}
+          fornecedoresIniciais={fornecedores}
           produto={{
             id: produto.id,
             nome: produto.nome,
@@ -38,7 +40,7 @@ export default async function EditarProdutoPage({ params }: PageProps<"/produtos
             temperaturaCor: produto.temperaturaCor,
             estoqueAtual: produto.estoqueAtual,
             estoqueMinimo: produto.estoqueMinimo,
-            fornecedor: produto.fornecedor,
+            fornecedorId: produto.fornecedorId,
             imagens: produto.imagens,
           }}
         />

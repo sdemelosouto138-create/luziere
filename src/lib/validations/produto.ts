@@ -12,7 +12,7 @@ export const produtoSchema = z.object({
   temperaturaCor: z.string().trim().nullable().optional(),
   estoqueAtual: z.coerce.number().int("Deve ser um número inteiro.").min(0),
   estoqueMinimo: z.coerce.number().int("Deve ser um número inteiro.").min(0),
-  fornecedor: z.string().trim().optional().nullable(),
+  fornecedorId: z.string().trim().optional().nullable(),
   imagens: z.array(z.string().min(1)).optional().default([]),
 });
 

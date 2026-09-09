@@ -7,7 +7,7 @@ export async function GET(_request: Request, { params }: RouteContext<"/api/prod
   const { id } = await params;
   const produto = await prisma.produto.findUnique({
     where: { id },
-    include: { categoria: true, imagens: { orderBy: { ordem: "asc" } } },
+    include: { categoria: true, fornecedor: true, imagens: { orderBy: { ordem: "asc" } } },
   });
 
   if (!produto) {
@@ -57,12 +57,12 @@ export async function PUT(request: Request, { params }: RouteContext<"/api/produ
         temperaturaCor: dados.temperaturaCor || null,
         estoqueAtual: dados.estoqueAtual,
         estoqueMinimo: dados.estoqueMinimo,
-        fornecedor: dados.fornecedor || null,
+        fornecedorId: dados.fornecedorId || null,
         imagens: {
           create: dados.imagens.map((url, ordem) => ({ url, ordem })),
         },
       },
-      include: { categoria: true, imagens: true },
+      include: { categoria: true, fornecedor: true, imagens: true },
     });
 
     if (diferencaEstoque !== 0) {

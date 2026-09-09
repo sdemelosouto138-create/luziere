@@ -18,5 +18,9 @@ export default defineConfig({
   },
   datasource: {
     url: urlMigracoes,
+    // Só em desenvolvimento local: o `prisma dev` usa o banco "template1", e o Postgres
+    // clona esse banco ao criar o shadow database temporário (ele nasceria já com as
+    // tabelas). Apontamos para o shadow que o próprio `prisma dev` disponibiliza.
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });

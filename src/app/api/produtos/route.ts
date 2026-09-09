@@ -22,7 +22,7 @@ export async function GET(request: Request) {
           }
         : {}),
     },
-    include: { categoria: true, imagens: { orderBy: { ordem: "asc" } } },
+    include: { categoria: true, fornecedor: true, imagens: { orderBy: { ordem: "asc" } } },
     orderBy: { nome: "asc" },
   });
 
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       temperaturaCor: dados.temperaturaCor || null,
       estoqueAtual: dados.estoqueAtual,
       estoqueMinimo: dados.estoqueMinimo,
-      fornecedor: dados.fornecedor || null,
+      fornecedorId: dados.fornecedorId || null,
       imagens: {
         create: dados.imagens.map((url, ordem) => ({ url, ordem })),
       },
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
           }
         : {}),
     },
-    include: { categoria: true, imagens: true },
+    include: { categoria: true, fornecedor: true, imagens: true },
   });
 
   return NextResponse.json(serializarProduto(produto), { status: 201 });

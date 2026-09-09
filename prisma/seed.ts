@@ -14,6 +14,7 @@ async function main() {
   await prisma.pedido.deleteMany();
   await prisma.imagemProduto.deleteMany();
   await prisma.produto.deleteMany();
+  await prisma.fornecedor.deleteMany();
   await prisma.categoria.deleteMany();
   await prisma.cliente.deleteMany();
 
@@ -33,6 +34,20 @@ async function main() {
   for (const nome of nomesCategorias) {
     const categoria = await prisma.categoria.create({ data: { nome } });
     categorias.set(nome, categoria.id);
+  }
+
+  console.log("Criando fornecedores...");
+  const fornecedoresSeed = [
+    { nome: "Osram", contato: "Carlos Mendes", telefone: "(11) 3000-1000", email: "vendas@osram.example.com", cidade: "São Paulo", uf: "SP" },
+    { nome: "Save Energy", contato: "Ana Paula", telefone: "(11) 3000-2000", email: "comercial@saveenergy.example.com", cidade: "Barueri", uf: "SP" },
+    { nome: "Itaim Iluminação", contato: "Ricardo Lima", telefone: "(11) 3000-3000", email: "pedidos@itaim.example.com", cidade: "São Paulo", uf: "SP" },
+    { nome: "Bella Luce", contato: "Fernanda Rocha", telefone: "(47) 3000-4000", email: "atendimento@bellaluce.example.com", cidade: "Blumenau", uf: "SC" },
+    { nome: "LedTech", contato: "Marcos Silva", telefone: "(41) 3000-5000", email: "vendas@ledtech.example.com", cidade: "Curitiba", uf: "PR" },
+  ];
+  const fornecedores = new Map<string, string>();
+  for (const f of fornecedoresSeed) {
+    const fornecedor = await prisma.fornecedor.create({ data: f });
+    fornecedores.set(f.nome, fornecedor.id);
   }
 
   console.log("Criando produtos...");
@@ -264,7 +279,7 @@ async function main() {
         temperaturaCor: p.temperaturaCor,
         estoqueAtual: p.estoqueAtual,
         estoqueMinimo: p.estoqueMinimo,
-        fornecedor: p.fornecedor,
+        fornecedorId: fornecedores.get(p.fornecedor) ?? null,
       },
     });
     produtos.set(p.sku, produto.id);

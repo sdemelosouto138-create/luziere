@@ -35,7 +35,8 @@ model Produto {
   temperaturaCor String? // 2700K, 3000K, 4000K, 6500K
   estoqueAtual   Int       @default(0)
   estoqueMinimo  Int       @default(0)
-  fornecedor     String?
+  fornecedorId   String?
+  fornecedor     Fornecedor? @relation(fields: [fornecedorId], references: [id], onDelete: SetNull)
   ativo          Boolean   @default(true)
   criadoEm       DateTime  @default(now())
   atualizadoEm   DateTime  @updatedAt
@@ -45,6 +46,29 @@ model Produto {
   movimentacoes MovimentacaoEstoque[]
 
   @@map("produtos")
+}
+
+model Fornecedor {
+  id           String   @id @default(cuid())
+  nome         String
+  cnpj         String?
+  telefone     String?
+  email        String?
+  contato      String? // nome da pessoa de contato
+  site         String?
+  cep          String?
+  rua          String?
+  numero       String?
+  bairro       String?
+  cidade       String?
+  uf           String?
+  observacoes  String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  produtos Produto[]
+
+  @@map("fornecedores")
 }
 
 model ImagemProduto {
