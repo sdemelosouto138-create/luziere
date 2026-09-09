@@ -129,6 +129,23 @@ const styles = StyleSheet.create({
   colQtd: { width: "12%", textAlign: "center" },
   colPreco: { width: "21%", textAlign: "right" },
   colSubtotal: { width: "21%", textAlign: "right" },
+  ambienteLinha: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: CREME,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDA,
+  },
+  ambienteNome: {
+    fontSize: 8.5,
+    fontWeight: 700,
+    color: DOURADO,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  ambienteSubtotal: { fontSize: 8.5, fontWeight: 700, color: GRAFITE },
   produtoNome: { fontSize: 9.5, fontWeight: 500 },
   produtoSku: { fontSize: 7.5, color: CINZA, marginTop: 1 },
   totaisBox: {
@@ -235,6 +252,7 @@ export type OrcamentoPdfData = {
     quantidade: number;
     precoUnitario: number;
     subtotal: number;
+    ambiente: string | null;
     produto: { nome: string; sku: string | null; unidade: string };
   }[];
   loja: {
@@ -250,6 +268,15 @@ export type OrcamentoPdfData = {
 };
 
 export function OrcamentoPdf({ dados }: { dados: OrcamentoPdfData }) {
+  // Agrupa os itens por ambiente, preservando a ordem em que foram montados.
+  const gruposDeItens: { ambiente: string | null; itens: OrcamentoPdfData["itens"] }[] = [];
+  for (const item of dados.itens) {
+    const grupo = gruposDeItens.find((g) => g.ambiente === item.ambiente);
+    if (grupo) grupo.itens.push(item);
+    else gruposDeItens.push({ ambiente: item.ambiente, itens: [item] });
+  }
+  const temAmbientes = dados.itens.some((i) => i.ambiente);
+
   const enderecoCliente = [
     dados.cliente.rua && dados.cliente.numero ? `${dados.cliente.rua}, ${dados.cliente.numero}` : dados.cliente.rua,
     dados.cliente.bairro,
@@ -306,17 +333,30 @@ export function OrcamentoPdf({ dados }: { dados: OrcamentoPdfData }) {
               <Text style={[styles.tabelaHeaderTexto, styles.colPreco]}>Preço unit.</Text>
               <Text style={[styles.tabelaHeaderTexto, styles.colSubtotal]}>Subtotal</Text>
             </View>
-            {dados.itens.map((item, index) => (
-              <View style={styles.tabelaLinha} key={index} wrap={false}>
-                <View style={styles.colProduto}>
-                  <Text style={styles.produtoNome}>{item.produto.nome}</Text>
-                  {item.produto.sku ? <Text style={styles.produtoSku}>{item.produto.sku}</Text> : null}
-                </View>
-                <Text style={styles.colQtd}>
-                  {item.quantidade} {item.produto.unidade}
-                </Text>
-                <Text style={styles.colPreco}>{formatarMoeda(item.precoUnitario)}</Text>
-                <Text style={styles.colSubtotal}>{formatarMoeda(item.subtotal)}</Text>
+            {gruposDeItens.map((grupo, indiceGrupo) => (
+              <View key={indiceGrupo}>
+                {/* Cabeçalho do ambiente (Quarto, Sacada...), com o subtotal daquele trecho. */}
+                {temAmbientes ? (
+                  <View style={styles.ambienteLinha} wrap={false}>
+                    <Text style={styles.ambienteNome}>{grupo.ambiente ?? "Outros itens"}</Text>
+                    <Text style={styles.ambienteSubtotal}>
+                      {formatarMoeda(grupo.itens.reduce((soma, i) => soma + i.subtotal, 0))}
+                    </Text>
+                  </View>
+                ) : null}
+                {grupo.itens.map((item, index) => (
+                  <View style={styles.tabelaLinha} key={index} wrap={false}>
+                    <View style={styles.colProduto}>
+                      <Text style={styles.produtoNome}>{item.produto.nome}</Text>
+                      {item.produto.sku ? <Text style={styles.produtoSku}>{item.produto.sku}</Text> : null}
+                    </View>
+                    <Text style={styles.colQtd}>
+                      {item.quantidade} {item.produto.unidade}
+                    </Text>
+                    <Text style={styles.colPreco}>{formatarMoeda(item.precoUnitario)}</Text>
+                    <Text style={styles.colSubtotal}>{formatarMoeda(item.subtotal)}</Text>
+                  </View>
+                ))}
               </View>
             ))}
           </View>

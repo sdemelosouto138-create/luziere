@@ -7,7 +7,7 @@ export default async function EditarPedidoPage({ params }: PageProps<"/pedidos/[
 
   const pedido = await prisma.pedido.findUnique({
     where: { id },
-    include: { itens: { include: { produto: true } } },
+    include: { itens: { include: { produto: true }, orderBy: { ordem: "asc" } } },
   });
 
   if (!pedido) {
@@ -37,6 +37,7 @@ export default async function EditarPedidoPage({ params }: PageProps<"/pedidos/[
             itens: pedido.itens.map((i) => ({
               produtoId: i.produtoId,
               produto: { nome: i.produto.nome, sku: i.produto.sku },
+              ambiente: i.ambiente,
               quantidade: i.quantidade,
               precoUnitario: Number(i.precoUnitario),
             })),

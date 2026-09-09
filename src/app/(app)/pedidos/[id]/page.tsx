@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Download, Pencil } from "lucide-react";
@@ -15,7 +16,7 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
 
   const pedido = await prisma.pedido.findUnique({
     where: { id },
-    include: { cliente: true, itens: { include: { produto: true } } },
+    include: { cliente: true, itens: { include: { produto: true }, orderBy: { ordem: "asc" } } },
   });
 
   if (!pedido) {
@@ -27,6 +28,15 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
     precoUnitario: Number(i.precoUnitario),
     subtotal: Number(i.subtotal),
   }));
+  // Agrupa por ambiente (Quarto, Sacada...), preservando a ordem da montagem.
+  const grupos: { ambiente: string | null; itens: typeof itens }[] = [];
+  for (const item of itens) {
+    const grupo = grupos.find((g) => g.ambiente === item.ambiente);
+    if (grupo) grupo.itens.push(item);
+    else grupos.push({ ambiente: item.ambiente, itens: [item] });
+  }
+  const temAmbientes = itens.some((i) => i.ambiente);
+
   const subtotal = calcularSubtotalItens(itens);
   const valorDesconto = calcularValorDesconto(subtotal, Number(pedido.desconto), pedido.descontoTipo);
   const total = calcularTotalPedido(itens, Number(pedido.desconto), pedido.descontoTipo, Number(pedido.frete));
@@ -81,16 +91,30 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
             </TableRow>
           </TableHeader>
           <TableBody>
-            {itens.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>
-                  <p className="font-medium">{item.produto.nome}</p>
-                  {item.produto.sku && <p className="text-xs text-muted-foreground">{item.produto.sku}</p>}
-                </TableCell>
-                <TableCell>{item.quantidade}</TableCell>
-                <TableCell>{formatarMoeda(item.precoUnitario)}</TableCell>
-                <TableCell>{formatarMoeda(item.subtotal)}</TableCell>
-              </TableRow>
+            {grupos.map((grupo) => (
+              <Fragment key={grupo.ambiente ?? "__sem_ambiente__"}>
+                {temAmbientes && (
+                  <TableRow className="bg-secondary/50 hover:bg-secondary/50">
+                    <TableCell colSpan={3} className="py-2 text-xs font-semibold uppercase tracking-wide">
+                      {grupo.ambiente ?? "Sem ambiente"}
+                    </TableCell>
+                    <TableCell className="py-2 text-xs font-semibold">
+                      {formatarMoeda(grupo.itens.reduce((soma, i) => soma + i.subtotal, 0))}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {grupo.itens.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <p className="font-medium">{item.produto.nome}</p>
+                      {item.produto.sku && <p className="text-xs text-muted-foreground">{item.produto.sku}</p>}
+                    </TableCell>
+                    <TableCell>{item.quantidade}</TableCell>
+                    <TableCell>{formatarMoeda(item.precoUnitario)}</TableCell>
+                    <TableCell>{formatarMoeda(item.subtotal)}</TableCell>
+                  </TableRow>
+                ))}
+              </Fragment>
             ))}
           </TableBody>
         </Table>

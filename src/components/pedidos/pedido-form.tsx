@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Search, Trash2, Plus, ImageOff } from "lucide-react";
+import { Search, Trash2, Plus, ImageOff, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,14 @@ type ItemLinha = {
   sku: string | null;
   quantidade: number;
   precoUnitario: number;
+  /** Ambiente do cliente (ex.: "Quarto"). Null = item sem ambiente definido. */
+  ambiente: string | null;
 };
+
+/** O mesmo produto pode aparecer em ambientes diferentes, então a identidade é a dupla. */
+function chaveDoItem(produtoId: string, ambiente: string | null) {
+  return `${produtoId}::${ambiente ?? ""}`;
+}
 
 type PedidoExistente = {
   id: string;
@@ -51,7 +58,13 @@ type PedidoExistente = {
   condicaoPagamento: string | null;
   observacoes: string | null;
   validadeDias: number;
-  itens: { produtoId: string; produto: { nome: string; sku: string | null }; quantidade: number; precoUnitario: number }[];
+  itens: {
+    produtoId: string;
+    produto: { nome: string; sku: string | null };
+    quantidade: number;
+    precoUnitario: number;
+    ambiente: string | null;
+  }[];
 };
 
 export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
@@ -67,8 +80,20 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
       sku: i.produto.sku,
       quantidade: i.quantidade,
       precoUnitario: i.precoUnitario,
+      ambiente: i.ambiente,
     })) ?? [],
   );
+
+  // Ambientes do pedido (ex.: Quarto, Sacada). Vazio = pedido sem separação.
+  const [ambientes, setAmbientes] = useState<string[]>(() => {
+    const nomes = (pedido?.itens ?? [])
+      .map((i) => i.ambiente)
+      .filter((a): a is string => Boolean(a));
+    return [...new Set(nomes)];
+  });
+  const [ambienteAtual, setAmbienteAtual] = useState<string | null>(null);
+  const [novoAmbiente, setNovoAmbiente] = useState("");
+  const [mostrarNovoAmbiente, setMostrarNovoAmbiente] = useState(false);
   const [desconto, setDesconto] = useState(pedido?.desconto?.toString() ?? "0");
   const [descontoTipo, setDescontoTipo] = useState<"VALOR" | "PERCENTUAL">(pedido?.descontoTipo ?? "VALOR");
   const [frete, setFrete] = useState(pedido?.frete?.toString() ?? "0");
@@ -110,30 +135,71 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
     });
   }, [catalogo, categoriaFiltro, buscaProduto]);
 
+  // Quantidade já adicionada no ambiente selecionado (mostrada no seletor de produtos).
   const quantidadePorProduto = useMemo(
-    () => new Map(itens.map((i) => [i.produtoId, i.quantidade])),
-    [itens],
+    () =>
+      new Map(
+        itens.filter((i) => i.ambiente === ambienteAtual).map((i) => [i.produtoId, i.quantidade]),
+      ),
+    [itens, ambienteAtual],
   );
+
+  // Agrupa os itens por ambiente, na ordem em que cada ambiente apareceu.
+  const gruposDeItens = useMemo(() => {
+    const grupos: { ambiente: string | null; itens: ItemLinha[] }[] = [];
+    for (const item of itens) {
+      const grupo = grupos.find((g) => g.ambiente === item.ambiente);
+      if (grupo) grupo.itens.push(item);
+      else grupos.push({ ambiente: item.ambiente, itens: [item] });
+    }
+    return grupos;
+  }, [itens]);
 
   function adicionarItem(produto: Produto) {
     setItens((prev) => {
-      const existente = prev.find((i) => i.produtoId === produto.id);
+      const existente = prev.find((i) => i.produtoId === produto.id && i.ambiente === ambienteAtual);
       if (existente) {
-        return prev.map((i) => (i.produtoId === produto.id ? { ...i, quantidade: i.quantidade + 1 } : i));
+        return prev.map((i) =>
+          i.produtoId === produto.id && i.ambiente === ambienteAtual ? { ...i, quantidade: i.quantidade + 1 } : i,
+        );
       }
       return [
         ...prev,
-        { produtoId: produto.id, nome: produto.nome, sku: produto.sku, quantidade: 1, precoUnitario: produto.precoVenda },
+        {
+          produtoId: produto.id,
+          nome: produto.nome,
+          sku: produto.sku,
+          quantidade: 1,
+          precoUnitario: produto.precoVenda,
+          ambiente: ambienteAtual,
+        },
       ];
     });
   }
 
-  function atualizarItem(produtoId: string, campo: "quantidade" | "precoUnitario", valor: number) {
-    setItens((prev) => prev.map((i) => (i.produtoId === produtoId ? { ...i, [campo]: valor } : i)));
+  function atualizarItem(chave: string, campo: "quantidade" | "precoUnitario", valor: number) {
+    setItens((prev) =>
+      prev.map((i) => (chaveDoItem(i.produtoId, i.ambiente) === chave ? { ...i, [campo]: valor } : i)),
+    );
   }
 
-  function removerItem(produtoId: string) {
-    setItens((prev) => prev.filter((i) => i.produtoId !== produtoId));
+  function removerItem(chave: string) {
+    setItens((prev) => prev.filter((i) => chaveDoItem(i.produtoId, i.ambiente) !== chave));
+  }
+
+  function adicionarAmbiente() {
+    const nome = novoAmbiente.trim();
+    if (!nome) return;
+    if (!ambientes.includes(nome)) setAmbientes((prev) => [...prev, nome]);
+    setAmbienteAtual(nome);
+    setNovoAmbiente("");
+    setMostrarNovoAmbiente(false);
+  }
+
+  function removerAmbiente(nome: string) {
+    setAmbientes((prev) => prev.filter((a) => a !== nome));
+    setItens((prev) => prev.map((i) => (i.ambiente === nome ? { ...i, ambiente: null } : i)));
+    if (ambienteAtual === nome) setAmbienteAtual(null);
   }
 
   const subtotalItens = useMemo(
@@ -162,7 +228,7 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
     setSalvando(true);
     const payload = {
       clienteId,
-      itens: itens.map((i) => ({ produtoId: i.produtoId, quantidade: i.quantidade, precoUnitario: i.precoUnitario })),
+      itens: itens.map((i) => ({ produtoId: i.produtoId, quantidade: i.quantidade, precoUnitario: i.precoUnitario, ambiente: i.ambiente })),
       desconto: Number(desconto) || 0,
       descontoTipo,
       frete: Number(frete) || 0,
@@ -229,6 +295,83 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
 
       <div className="space-y-3">
         <Label>Itens</Label>
+        {/* Ambientes: separam o pedido por cômodo do cliente (Quarto, Sacada...). */}
+        <div className="rounded-xl border border-border bg-secondary/30 p-3">
+          <p className="mb-2 text-xs text-muted-foreground">
+            Adicionando itens em: <span className="font-medium text-foreground">{ambienteAtual ?? "sem ambiente"}</span>
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setAmbienteAtual(null)}
+              className={cn(
+                "rounded-full border px-3 py-1.5 text-xs transition-colors",
+                ambienteAtual === null
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border text-muted-foreground hover:bg-secondary",
+              )}
+            >
+              Sem ambiente
+            </button>
+            {ambientes.map((nome) => (
+              <span
+                key={nome}
+                className={cn(
+                  "flex items-center gap-1 rounded-full border pl-3 pr-1 text-xs transition-colors",
+                  ambienteAtual === nome
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border text-muted-foreground",
+                )}
+              >
+                <button type="button" onClick={() => setAmbienteAtual(nome)} className="py-1.5">
+                  {nome}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removerAmbiente(nome)}
+                  aria-label={`Remover ambiente ${nome}`}
+                  className="rounded-full p-1 hover:bg-black/10"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+
+            {mostrarNovoAmbiente ? (
+              <span className="flex items-center gap-1">
+                <Input
+                  autoFocus
+                  value={novoAmbiente}
+                  onChange={(e) => setNovoAmbiente(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      adicionarAmbiente();
+                    }
+                  }}
+                  placeholder="Ex.: Quarto"
+                  className="h-8 w-36 text-xs"
+                />
+                <Button type="button" size="sm" onClick={adicionarAmbiente}>
+                  Criar
+                </Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => setMostrarNovoAmbiente(false)}>
+                  Cancelar
+                </Button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setMostrarNovoAmbiente(true)}
+                className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-secondary"
+              >
+                <Plus className="size-3" />
+                Novo ambiente
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Seletor de produtos: filtra por categoria e/ou nome, sem precisar decorar nomes. */}
         <div className="rounded-xl border border-border">
           <div className="space-y-3 border-b border-border p-3">
@@ -343,36 +486,56 @@ export function PedidoForm({ pedido }: { pedido?: PedidoExistente }) {
                   </TableCell>
                 </TableRow>
               )}
-              {itens.map((item) => (
-                <TableRow key={item.produtoId}>
-                  <TableCell>
-                    <p className="font-medium">{item.nome}</p>
-                    {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={item.quantidade}
-                      onChange={(e) => atualizarItem(item.produtoId, "quantidade", Number(e.target.value))}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={item.precoUnitario}
-                      onChange={(e) => atualizarItem(item.produtoId, "precoUnitario", Number(e.target.value))}
-                    />
-                  </TableCell>
-                  <TableCell>{formatarMoeda(item.quantidade * item.precoUnitario)}</TableCell>
-                  <TableCell>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removerItem(item.produtoId)}>
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+              {gruposDeItens.map((grupo) => (
+                <Fragment key={grupo.ambiente ?? "__sem_ambiente__"}>
+                  {/* Cabeçalho do ambiente: só aparece quando o pedido está separado. */}
+                  {ambientes.length > 0 && (
+                    <TableRow className="bg-secondary/50 hover:bg-secondary/50">
+                      <TableCell colSpan={3} className="py-2 text-xs font-semibold uppercase tracking-wide">
+                        {grupo.ambiente ?? "Sem ambiente"}
+                      </TableCell>
+                      <TableCell colSpan={2} className="py-2 text-xs font-semibold">
+                        {formatarMoeda(
+                          grupo.itens.reduce((soma, i) => soma + i.quantidade * i.precoUnitario, 0),
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {grupo.itens.map((item) => {
+                    const chave = chaveDoItem(item.produtoId, item.ambiente);
+                    return (
+                      <TableRow key={chave}>
+                        <TableCell>
+                          <p className="font-medium">{item.nome}</p>
+                          {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantidade}
+                            onChange={(e) => atualizarItem(chave, "quantidade", Number(e.target.value))}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.precoUnitario}
+                            onChange={(e) => atualizarItem(chave, "precoUnitario", Number(e.target.value))}
+                          />
+                        </TableCell>
+                        <TableCell>{formatarMoeda(item.quantidade * item.precoUnitario)}</TableCell>
+                        <TableCell>
+                          <Button type="button" variant="ghost" size="icon" onClick={() => removerItem(chave)}>
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </Fragment>
               ))}
             </TableBody>
           </Table>

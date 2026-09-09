@@ -4,6 +4,7 @@ export const itemPedidoSchema = z.object({
   produtoId: z.string().min(1),
   quantidade: z.coerce.number().int().min(1, "A quantidade deve ser pelo menos 1."),
   precoUnitario: z.coerce.number().min(0),
+  ambiente: z.string().trim().optional().nullable(),
 });
 
 export const pedidoSchema = z.object({

@@ -85,7 +85,7 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/ped
     return tx.pedido.update({
       where: { id },
       data: { status: novoStatus },
-      include: { cliente: true, itens: { include: { produto: true } } },
+      include: { cliente: true, itens: { include: { produto: true }, orderBy: { ordem: "asc" } } },
     });
   });
 

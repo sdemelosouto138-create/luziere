@@ -140,6 +140,8 @@ model ItemPedido {
   quantidade    Int
   precoUnitario Decimal
   subtotal      Decimal
+  ambiente      String? // ex.: "Quarto", "Sacada" — agrupa os itens no orçamento
+  ordem         Int     @default(0) // preserva a ordem definida na montagem do pedido
 
   @@map("itens_pedido")
 }

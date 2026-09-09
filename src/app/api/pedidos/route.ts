@@ -52,15 +52,17 @@ export async function POST(request: Request) {
       observacoes: dados.observacoes || null,
       validadeDias: dados.validadeDias,
       itens: {
-        create: dados.itens.map((item) => ({
+        create: dados.itens.map((item, ordem) => ({
           produtoId: item.produtoId,
           quantidade: item.quantidade,
           precoUnitario: item.precoUnitario,
           subtotal: item.quantidade * item.precoUnitario,
+          ambiente: item.ambiente || null,
+          ordem,
         })),
       },
     },
-    include: { cliente: true, itens: { include: { produto: true } } },
+    include: { cliente: true, itens: { include: { produto: true }, orderBy: { ordem: "asc" } } },
   });
 
   return NextResponse.json(serializarPedido(pedido), { status: 201 });

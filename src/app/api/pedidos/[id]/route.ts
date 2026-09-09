@@ -7,7 +7,7 @@ export async function GET(_request: Request, { params }: RouteContext<"/api/pedi
   const { id } = await params;
   const pedido = await prisma.pedido.findUnique({
     where: { id },
-    include: { cliente: true, itens: { include: { produto: true } } },
+    include: { cliente: true, itens: { include: { produto: true }, orderBy: { ordem: "asc" } } },
   });
 
   if (!pedido) {
@@ -55,15 +55,17 @@ export async function PUT(request: Request, { params }: RouteContext<"/api/pedid
         observacoes: dados.observacoes || null,
         validadeDias: dados.validadeDias,
         itens: {
-          create: dados.itens.map((item) => ({
+          create: dados.itens.map((item, ordem) => ({
             produtoId: item.produtoId,
             quantidade: item.quantidade,
             precoUnitario: item.precoUnitario,
             subtotal: item.quantidade * item.precoUnitario,
+            ambiente: item.ambiente || null,
+            ordem,
           })),
         },
       },
-      include: { cliente: true, itens: { include: { produto: true } } },
+      include: { cliente: true, itens: { include: { produto: true }, orderBy: { ordem: "asc" } } },
     });
   });
 
