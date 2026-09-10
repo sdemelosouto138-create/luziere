@@ -67,8 +67,25 @@ model Fornecedor {
   atualizadoEm DateTime @updatedAt
 
   produtos Produto[]
+  notas    NotaFiscal[]
 
   @@map("fornecedores")
+}
+
+/** Nota fiscal (ou outro documento) anexada a um fornecedor. */
+model NotaFiscal {
+  id           String     @id @default(cuid())
+  fornecedorId String
+  fornecedor   Fornecedor @relation(fields: [fornecedorId], references: [id], onDelete: Cascade)
+  numero       String?
+  descricao    String?
+  dataEmissao  DateTime?
+  valor        Decimal?
+  arquivoUrl   String
+  arquivoNome  String
+  criadoEm     DateTime   @default(now())
+
+  @@map("notas_fiscais")
 }
 
 model ImagemProduto {

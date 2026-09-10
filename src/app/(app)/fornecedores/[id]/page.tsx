@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { FornecedorForm } from "@/components/fornecedores/fornecedor-form";
+import { NotasFiscais } from "@/components/fornecedores/notas-fiscais";
 import { Badge } from "@/components/ui/badge";
 import { formatarMoeda } from "@/lib/format";
 
@@ -48,7 +49,10 @@ export default async function FichaFornecedorPage({ params }: PageProps<"/fornec
           }}
         />
 
-        <div>
+        <div className="space-y-10">
+          <NotasFiscais fornecedorId={fornecedor.id} />
+
+          <div>
           <h2 className="font-serif text-xl text-foreground">
             Produtos deste fornecedor ({fornecedor.produtos.length})
           </h2>
@@ -77,6 +81,7 @@ export default async function FichaFornecedorPage({ params }: PageProps<"/fornec
                 </div>
               </Link>
             ))}
+          </div>
           </div>
         </div>
       </div>

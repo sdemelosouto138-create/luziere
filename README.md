@@ -181,7 +181,7 @@ luziere/
 │   │   ├── format.ts          # R$ e datas em pt-BR
 │   │   ├── pedido.ts          # cálculo de totais
 │   │   ├── storage.ts         # upload (Blob ou pasta local)
-│   │   ├── fornecedores/      # cadastro de fornecedores (vinculados aos produtos)
+│   │   ├── fornecedores/      # cadastro de fornecedores, com notas fiscais anexadas
 │   │   ├── validations/       # schemas zod
 │   │   └── fonts/             # fontes do PDF
 │   └── generated/prisma/      # cliente gerado (não versionar)

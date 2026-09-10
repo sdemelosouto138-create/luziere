@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { salvarImagem } from "@/lib/storage";
+import { PASTA_NOTAS, PASTA_PRODUTOS, salvarArquivo } from "@/lib/storage";
 
-/** Diagnóstico: informa se o armazenamento de imagens está configurado (sem expor segredos). */
+/** Diagnóstico: informa se o armazenamento de arquivos está configurado (sem expor segredos). */
 export async function GET() {
   return NextResponse.json({
     vercel: Boolean(process.env.VERCEL),
@@ -10,23 +10,33 @@ export async function GET() {
   });
 }
 
+const TIPOS_DOCUMENTO = ["application/pdf", "text/xml", "application/xml"];
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const arquivo = formData.get("arquivo");
+  // "documento" aceita PDF/XML além de imagens (usado nas notas fiscais).
+  const tipo = formData.get("tipo") === "documento" ? "documento" : "imagem";
 
   if (!(arquivo instanceof File) || arquivo.size === 0) {
     return NextResponse.json({ erro: "Nenhum arquivo enviado." }, { status: 400 });
   }
 
-  if (!arquivo.type.startsWith("image/")) {
+  const ehImagem = arquivo.type.startsWith("image/");
+  const ehDocumento = TIPOS_DOCUMENTO.includes(arquivo.type) || arquivo.name.toLowerCase().endsWith(".xml");
+
+  if (tipo === "imagem" && !ehImagem) {
     return NextResponse.json({ erro: "Envie apenas arquivos de imagem." }, { status: 400 });
+  }
+  if (tipo === "documento" && !ehImagem && !ehDocumento) {
+    return NextResponse.json({ erro: "Envie um PDF, XML ou imagem." }, { status: 400 });
   }
 
   try {
-    const url = await salvarImagem(arquivo);
-    return NextResponse.json({ url });
+    const url = await salvarArquivo(arquivo, tipo === "documento" ? PASTA_NOTAS : PASTA_PRODUTOS);
+    return NextResponse.json({ url, nome: arquivo.name });
   } catch (erro) {
-    const mensagem = erro instanceof Error ? erro.message : "Falha ao salvar a imagem.";
+    const mensagem = erro instanceof Error ? erro.message : "Falha ao salvar o arquivo.";
     console.error("[upload]", erro);
     return NextResponse.json({ erro: mensagem }, { status: 500 });
   }
