@@ -8,6 +8,7 @@ import {
   Boxes,
   BarChart3,
   Truck,
+  ShoppingCart,
 } from "lucide-react";
 
 export type NavItem = {
@@ -23,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/estoque", label: "Estoque", icon: Boxes },
+  { href: "/compras", label: "Compras", icon: ShoppingCart },
   { href: "/fornecedores", label: "Fornecedores", icon: Truck },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
 ];

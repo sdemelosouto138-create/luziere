@@ -142,6 +142,10 @@ model Pedido {
   // Ambientes do pedido (Quarto, Sacada...) na ordem definida na montagem.
   // Ficam salvos mesmo sem itens, para não perder o rascunho do orçamento.
   ambientes         String[]     @default([])
+  // Marca que a compra com os fornecedores já foi feita, para o pedido sair
+  // da lista de compras pendentes sem mudar o status de venda.
+  compraRealizada   Boolean      @default(false)
+  compraRealizadaEm DateTime?
   criadoEm          DateTime     @default(now())
   atualizadoEm      DateTime     @updatedAt
 
