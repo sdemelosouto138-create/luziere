@@ -65,7 +65,7 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
               Baixar PDF
             </a>
           </Button>
-          {pedido.status === "ORCAMENTO" && (
+          {pedido.status !== "CANCELADO" && (
             <Button variant="outline" asChild>
               <Link href={`/pedidos/${pedido.id}/editar`}>
                 <Pencil className="size-4" />

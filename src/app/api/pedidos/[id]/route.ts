@@ -26,21 +26,67 @@ export async function PUT(request: Request, { params }: RouteContext<"/api/pedid
     return NextResponse.json({ erro: parsed.error.issues[0]?.message ?? "Dados inválidos." }, { status: 400 });
   }
 
-  const pedidoAtual = await prisma.pedido.findUnique({ where: { id } });
+  const pedidoAtual = await prisma.pedido.findUnique({
+    where: { id },
+    include: { itens: true },
+  });
   if (!pedidoAtual) {
     return NextResponse.json({ erro: "Pedido não encontrado." }, { status: 404 });
   }
 
-  if (pedidoAtual.status !== "ORCAMENTO") {
+  if (pedidoAtual.status === "CANCELADO") {
     return NextResponse.json(
-      { erro: "Só é possível editar os itens enquanto o pedido está como orçamento." },
+      { erro: "Um pedido cancelado não pode ser editado." },
       { status: 409 },
     );
   }
 
   const dados = parsed.data;
 
+  // Em pedido aprovado/concluído o estoque já foi baixado, então a edição
+  // precisa acertar apenas a diferença entre o que havia e o que passa a haver.
+  const estoqueJaFoiBaixado = pedidoAtual.status === "APROVADO" || pedidoAtual.status === "CONCLUIDO";
+
+  const somarPorProduto = (itens: { produtoId: string; quantidade: number }[]) => {
+    const mapa = new Map<string, number>();
+    for (const item of itens) {
+      mapa.set(item.produtoId, (mapa.get(item.produtoId) ?? 0) + item.quantidade);
+    }
+    return mapa;
+  };
+
+  // O mesmo produto pode estar em vários ambientes, por isso somamos por produto.
+  const quantidadesAntes = somarPorProduto(pedidoAtual.itens);
+  const quantidadesDepois = somarPorProduto(dados.itens);
+
   const pedido = await prisma.$transaction(async (tx) => {
+    if (estoqueJaFoiBaixado) {
+      const produtos = new Set([...quantidadesAntes.keys(), ...quantidadesDepois.keys()]);
+      for (const produtoId of produtos) {
+        const antes = quantidadesAntes.get(produtoId) ?? 0;
+        const depois = quantidadesDepois.get(produtoId) ?? 0;
+        const diferenca = depois - antes;
+        if (diferenca === 0) continue;
+
+        await tx.produto.update({
+          where: { id: produtoId },
+          data: { estoqueAtual: { decrement: diferenca } },
+        });
+        await tx.movimentacaoEstoque.create({
+          data: {
+            produtoId,
+            tipo: diferenca > 0 ? "VENDA" : "CANCELAMENTO",
+            quantidade: Math.abs(diferenca),
+            motivo:
+              diferenca > 0
+                ? `Ajuste por edição do pedido #${pedidoAtual.numero} (aumento de quantidade)`
+                : `Devolução por edição do pedido #${pedidoAtual.numero} (redução de quantidade)`,
+            pedidoId: id,
+          },
+        });
+      }
+    }
+
     await tx.itemPedido.deleteMany({ where: { pedidoId: id } });
 
     return tx.pedido.update({

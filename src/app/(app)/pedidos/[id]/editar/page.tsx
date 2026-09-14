@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { AlertTriangle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PedidoForm } from "@/components/pedidos/pedido-form";
 
@@ -14,13 +15,28 @@ export default async function EditarPedidoPage({ params }: PageProps<"/pedidos/[
     notFound();
   }
 
-  if (pedido.status !== "ORCAMENTO") {
+  // Pedido cancelado é histórico: não se edita.
+  if (pedido.status === "CANCELADO") {
     redirect(`/pedidos/${id}`);
   }
 
+  const estoqueJaFoiBaixado = pedido.status === "APROVADO" || pedido.status === "CONCLUIDO";
+
   return (
     <div>
-      <h1 className="font-serif text-3xl text-foreground">Editar orçamento #{pedido.numero}</h1>
+      <h1 className="font-serif text-3xl text-foreground">
+        Editar {pedido.status === "ORCAMENTO" ? "orçamento" : "pedido"} #{pedido.numero}
+      </h1>
+
+      {estoqueJaFoiBaixado && (
+        <p className="mt-3 flex items-start gap-2 rounded-xl border border-primary/40 bg-primary/10 p-3 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-primary" />
+          <span>
+            Este pedido já teve baixa no estoque. Ao salvar, o estoque é acertado automaticamente: o que você
+            aumentar sai do estoque e o que reduzir ou remover volta para ele, com registro no histórico.
+          </span>
+        </p>
+      )}
 
       <div className="mt-8">
         <PedidoForm
