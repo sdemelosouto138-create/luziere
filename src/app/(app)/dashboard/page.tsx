@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/pedidos/status-badge";
 import { VendasChart } from "@/components/dashboard/vendas-chart";
+import { BotaoOcultarValores } from "@/components/dashboard/ocultar-valores";
 import { formatarData, formatarMoeda } from "@/lib/format";
 import { calcularTotalPedido } from "@/lib/pedido";
 
@@ -62,18 +63,24 @@ export default async function DashboardPage() {
     return { mes: rotulo.charAt(0).toUpperCase() + rotulo.slice(1), total };
   });
 
+  // "sensivel" marca os cartões de dinheiro, que somem com o botão do olho.
   const cards = [
-    { titulo: "Vendas no mês", valor: formatarMoeda(totalMes), destaque: true },
+    { titulo: "Vendas no mês", valor: formatarMoeda(totalMes), destaque: true, sensivel: true },
     { titulo: "Pedidos no mês", valor: String(vendasMes.length) },
-    { titulo: "Ticket médio", valor: formatarMoeda(ticketMedio) },
-    { titulo: "Orçamentos em aberto", valor: formatarMoeda(valorOrcamentosAbertos), sub: `${orcamentosAbertos.length} orçamento(s)` },
+    { titulo: "Ticket médio", valor: formatarMoeda(ticketMedio), sensivel: true },
+    { titulo: "Orçamentos em aberto", valor: formatarMoeda(valorOrcamentosAbertos), sub: `${orcamentosAbertos.length} orçamento(s)`, sensivel: true },
     { titulo: "Estoque baixo", valor: String(estoqueBaixo.length), sub: "produto(s) abaixo do mínimo", alerta: estoqueBaixo.length > 0 },
   ];
 
   return (
     <div>
-      <h1 className="font-serif text-3xl text-foreground">Dashboard</h1>
-      <p className="mt-1 text-muted-foreground">Visão geral da Luziére em {formatadorMes.format(agora).replace(".", "")}/{agora.getFullYear()}.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-3xl text-foreground">Dashboard</h1>
+          <p className="mt-1 text-muted-foreground">Visão geral da Luziére em {formatadorMes.format(agora).replace(".", "")}/{agora.getFullYear()}.</p>
+        </div>
+        <BotaoOcultarValores />
+      </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
         {cards.map((card) => (
@@ -81,7 +88,7 @@ export default async function DashboardPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-normal text-muted-foreground">{card.titulo}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className={card.sensivel ? "valor-sensivel" : undefined}>
               <p className={`font-sans text-2xl font-semibold tabular-nums tracking-tight ${card.destaque ? "text-primary" : card.alerta ? "text-destructive" : "text-foreground"}`}>
                 {card.valor}
               </p>
@@ -96,7 +103,9 @@ export default async function DashboardPage() {
           <CardTitle className="font-serif text-lg font-normal">Vendas nos últimos 6 meses</CardTitle>
         </CardHeader>
         <CardContent>
-          <VendasChart dados={dadosGrafico} />
+          <div className="valor-sensivel">
+            <VendasChart dados={dadosGrafico} />
+          </div>
         </CardContent>
       </Card>
 
@@ -123,7 +132,7 @@ export default async function DashboardPage() {
                   <p className="text-xs text-muted-foreground">{formatarData(pedido.criadoEm)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium">{formatarMoeda(totalDoPedido(pedido))}</p>
+                  <p className="valor-sensivel text-sm font-medium">{formatarMoeda(totalDoPedido(pedido))}</p>
                   <StatusBadge status={pedido.status} />
                 </div>
               </Link>
@@ -151,7 +160,7 @@ export default async function DashboardPage() {
                     {formatarData(pedido.criadoEm)} · válido por {pedido.validadeDias} dias
                   </p>
                 </div>
-                <p className="text-sm font-medium">{formatarMoeda(totalDoPedido(pedido))}</p>
+                <p className="valor-sensivel text-sm font-medium">{formatarMoeda(totalDoPedido(pedido))}</p>
               </Link>
             ))}
           </CardContent>

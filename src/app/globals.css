@@ -144,6 +144,21 @@
   --font-heading: var(--font-serif-brand);
 }
 
+@layer utilities {
+  /*
+    Ocultar valores (botão do olho no dashboard).
+    O script no layout põe a classe em <html> antes de a página aparecer,
+    então os valores nunca chegam a piscar na tela.
+  */
+  .valor-sensivel {
+    transition: filter 0.15s ease;
+  }
+  .valores-ocultos .valor-sensivel {
+    filter: blur(9px);
+    user-select: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

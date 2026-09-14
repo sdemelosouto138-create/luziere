@@ -24,6 +24,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${playfairDisplay.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        {/*
+          Aplica a preferência de "ocultar valores" ANTES de a página ser
+          desenhada. Sem isso os valores apareceriam por um instante antes de
+          serem borrados — o que derrubaria o propósito do botão.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('luziere:valores-ocultos')==='1'){document.documentElement.classList.add('valores-ocultos')}}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
       </body>
