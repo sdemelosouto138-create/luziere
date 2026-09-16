@@ -6,7 +6,8 @@ import { serializarPedido } from "@/lib/serialize";
 const TRANSICOES_VALIDAS: Record<string, string[]> = {
   ORCAMENTO: ["APROVADO", "CANCELADO"],
   APROVADO: ["CONCLUIDO", "CANCELADO"],
-  CONCLUIDO: ["CANCELADO"],
+  // Voltar de concluído para aprovado corrige um clique errado sem cancelar a venda.
+  CONCLUIDO: ["APROVADO", "CANCELADO"],
   CANCELADO: [],
 };
 
@@ -42,11 +43,12 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/ped
     );
   }
 
-  // Baixa de estoque ao aprovar (a venda foi confirmada).
-  const estoqueJaFoiBaixado = pedidoAtual.status === "APROVADO" || pedidoAtual.status === "CONCLUIDO";
+  // A baixa acontece na CONCLUSÃO (entrega), não na aprovação: a loja trabalha
+  // sob encomenda, então entre aprovar e entregar a mercadoria ainda nem chegou.
+  const estoqueJaFoiBaixado = pedidoAtual.status === "CONCLUIDO";
 
   const pedido = await prisma.$transaction(async (tx) => {
-    if (novoStatus === "APROVADO" && !estoqueJaFoiBaixado) {
+    if (novoStatus === "CONCLUIDO" && !estoqueJaFoiBaixado) {
       for (const item of pedidoAtual.itens) {
         await tx.produto.update({
           where: { id: item.produtoId },
@@ -57,14 +59,15 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/ped
             produtoId: item.produtoId,
             tipo: "VENDA",
             quantidade: item.quantidade,
-            motivo: "Baixa automática por aprovação de pedido",
+            motivo: "Baixa automática por conclusão do pedido",
             pedidoId: id,
           },
         });
       }
     }
 
-    if (novoStatus === "CANCELADO" && estoqueJaFoiBaixado) {
+    // Sair de concluído (cancelar ou voltar para aprovado) estorna a baixa.
+    if ((novoStatus === "CANCELADO" || novoStatus === "APROVADO") && estoqueJaFoiBaixado) {
       for (const item of pedidoAtual.itens) {
         await tx.produto.update({
           where: { id: item.produtoId },
@@ -75,7 +78,10 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/ped
             produtoId: item.produtoId,
             tipo: "CANCELAMENTO",
             quantidade: item.quantidade,
-            motivo: "Devolução ao estoque por cancelamento de pedido",
+            motivo:
+              novoStatus === "CANCELADO"
+                ? "Devolução ao estoque por cancelamento de pedido"
+                : "Estorno ao estoque: pedido deixou de estar concluído",
             pedidoId: id,
           },
         });

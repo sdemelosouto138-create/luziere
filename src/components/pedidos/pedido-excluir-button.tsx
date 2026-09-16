@@ -32,7 +32,7 @@ export function PedidoExcluirButton({ pedidoId, numero, status, variante = "bota
   const [aberto, setAberto] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
 
-  const devolveEstoque = status === "APROVADO" || status === "CONCLUIDO";
+  const devolveEstoque = status === "CONCLUIDO";
 
   async function handleExcluir() {
     setExcluindo(true);
@@ -75,7 +75,7 @@ export function PedidoExcluirButton({ pedidoId, numero, status, variante = "bota
             <AlertDialogTitle>Excluir pedido #{numero}?</AlertDialogTitle>
             <AlertDialogDescription>
               {devolveEstoque
-                ? "Este pedido já teve o estoque baixado. Ao excluir, os itens voltam ao estoque e a devolução fica registrada no histórico. Esta ação não pode ser desfeita."
+                ? "Este pedido concluído já teve o estoque baixado. Ao excluir, os itens voltam ao estoque e a devolução fica registrada no histórico. Esta ação não pode ser desfeita."
                 : "O orçamento será removido definitivamente. Esta ação não pode ser desfeita."}
             </AlertDialogDescription>
           </AlertDialogHeader>

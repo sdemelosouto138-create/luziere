@@ -55,7 +55,7 @@ export function PedidoStatusActions({ pedidoId, status }: { pedidoId: string; st
               setConfirmacao({
                 novoStatus: "APROVADO",
                 titulo: "Aprovar orçamento?",
-                descricao: "O orçamento vira um pedido aprovado e o estoque dos itens será baixado automaticamente.",
+                descricao: "O orçamento vira um pedido aprovado. O estoque não muda agora: a baixa acontece quando você concluir a entrega.",
               })
             }
           >
@@ -82,7 +82,7 @@ export function PedidoStatusActions({ pedidoId, status }: { pedidoId: string; st
               setConfirmacao({
                 novoStatus: "CONCLUIDO",
                 titulo: "Marcar como concluído?",
-                descricao: "Use quando a entrega/instalação já tiver sido finalizada.",
+                descricao: "Use quando a entrega já tiver sido feita. É neste momento que o estoque dos itens é baixado.",
               })
             }
           >
@@ -95,7 +95,7 @@ export function PedidoStatusActions({ pedidoId, status }: { pedidoId: string; st
               setConfirmacao({
                 novoStatus: "CANCELADO",
                 titulo: "Cancelar pedido?",
-                descricao: "O estoque baixado será devolvido automaticamente.",
+                descricao: "O pedido é cancelado. O estoque não muda, porque a baixa só acontece na conclusão.",
               })
             }
           >
@@ -105,19 +105,35 @@ export function PedidoStatusActions({ pedidoId, status }: { pedidoId: string; st
       )}
 
       {status === "CONCLUIDO" && (
-        <Button
-          variant="outline"
-          disabled={enviando}
-          onClick={() =>
-            setConfirmacao({
-              novoStatus: "CANCELADO",
-              titulo: "Cancelar pedido concluído?",
-              descricao: "O estoque baixado será devolvido automaticamente.",
-            })
-          }
-        >
-          Cancelar pedido
-        </Button>
+        <>
+          <Button
+            variant="outline"
+            disabled={enviando}
+            onClick={() =>
+              setConfirmacao({
+                novoStatus: "APROVADO",
+                titulo: "Voltar para aprovado?",
+                descricao:
+                  "Use se marcou como concluído por engano. A venda continua valendo e o estoque baixado é estornado.",
+              })
+            }
+          >
+            Voltar para aprovado
+          </Button>
+          <Button
+            variant="outline"
+            disabled={enviando}
+            onClick={() =>
+              setConfirmacao({
+                novoStatus: "CANCELADO",
+                titulo: "Cancelar pedido concluído?",
+                descricao: "O estoque baixado será devolvido automaticamente.",
+              })
+            }
+          >
+            Cancelar pedido
+          </Button>
+        </>
       )}
 
       <AlertDialog open={Boolean(confirmacao)} onOpenChange={(open) => !open && setConfirmacao(null)}>

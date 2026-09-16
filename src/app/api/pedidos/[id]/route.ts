@@ -43,9 +43,8 @@ export async function PUT(request: Request, { params }: RouteContext<"/api/pedid
 
   const dados = parsed.data;
 
-  // Em pedido aprovado/concluído o estoque já foi baixado, então a edição
-  // precisa acertar apenas a diferença entre o que havia e o que passa a haver.
-  const estoqueJaFoiBaixado = pedidoAtual.status === "APROVADO" || pedidoAtual.status === "CONCLUIDO";
+  // Só o pedido CONCLUÍDO já teve baixa, então a edição acerta apenas a diferença.
+  const estoqueJaFoiBaixado = pedidoAtual.status === "CONCLUIDO";
 
   const somarPorProduto = (itens: { produtoId: string; quantidade: number }[]) => {
     const mapa = new Map<string, number>();
@@ -127,8 +126,8 @@ export async function DELETE(_request: Request, { params }: RouteContext<"/api/p
     return NextResponse.json({ erro: "Pedido não encontrado." }, { status: 404 });
   }
 
-  // Se o estoque já foi baixado (aprovado/concluído), devolve os itens antes de excluir.
-  const estoqueFoiBaixado = pedido.status === "APROVADO" || pedido.status === "CONCLUIDO";
+  // Só o pedido CONCLUÍDO teve baixa; nesse caso devolve os itens antes de excluir.
+  const estoqueFoiBaixado = pedido.status === "CONCLUIDO";
 
   await prisma.$transaction(async (tx) => {
     if (estoqueFoiBaixado) {

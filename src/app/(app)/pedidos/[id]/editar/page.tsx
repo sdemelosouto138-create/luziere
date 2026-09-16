@@ -20,7 +20,7 @@ export default async function EditarPedidoPage({ params }: PageProps<"/pedidos/[
     redirect(`/pedidos/${id}`);
   }
 
-  const estoqueJaFoiBaixado = pedido.status === "APROVADO" || pedido.status === "CONCLUIDO";
+  const estoqueJaFoiBaixado = pedido.status === "CONCLUIDO";
 
   return (
     <div>
