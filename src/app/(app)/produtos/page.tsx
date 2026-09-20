@@ -34,12 +34,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatarMoeda } from "@/lib/format";
+import {
+  ALIQUOTA_IMPOSTO_PERCENTUAL,
+  MARGEM_MINIMA_SAUDAVEL,
+  calcularMargem,
+  corDaFaixa,
+  faixaDaMargem,
+  formatarPercentual,
+  resumirMargens,
+} from "@/lib/margem";
 
 type Produto = {
   id: string;
   nome: string;
   sku: string | null;
+  precoCusto: number;
   precoVenda: number;
+  unidade: string;
   estoqueAtual: number;
   estoqueMinimo: number;
   categoria: { id: string; nome: string };
@@ -91,6 +102,8 @@ export default function ProdutosPage() {
     setProdutoParaExcluir(null);
   }
 
+  const resumo = resumirMargens(produtos);
+
   return (
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -131,6 +144,59 @@ export default function ProdutosPage() {
         </Select>
       </div>
 
+      {resumo.media !== null && (
+        <div className="mt-6 rounded-xl border border-border p-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Margem média</p>
+              <p className="valor-sensivel mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                {formatarPercentual(resumo.media)}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {resumo.total} {resumo.total === 1 ? "produto listado" : "produtos listados"}
+              </p>
+            </div>
+
+            {resumo.menor && (
+              <div>
+                <p className="text-sm text-muted-foreground">Menor margem</p>
+                <p
+                  className={`valor-sensivel mt-1 text-2xl font-semibold tabular-nums ${corDaFaixa(
+                    faixaDaMargem(resumo.menor.percentual),
+                  )}`}
+                >
+                  {formatarPercentual(resumo.menor.percentual)}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground" title={resumo.menor.nome}>
+                  {resumo.menor.nome}
+                </p>
+              </div>
+            )}
+
+            <div>
+              <p className="text-sm text-muted-foreground">Atenção</p>
+              <p
+                className={`mt-1 text-2xl font-semibold tabular-nums ${
+                  resumo.abaixoDoMinimo > 0 ? "text-amber-600 dark:text-amber-500" : "text-foreground"
+                }`}
+              >
+                {resumo.abaixoDoMinimo}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {resumo.emPrejuizo > 0
+                  ? `${resumo.emPrejuizo} no prejuízo`
+                  : `abaixo de ${MARGEM_MINIMA_SAUDAVEL}% de margem`}
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
+            Margem líquida: já descontados o custo do produto e o imposto de{" "}
+            {formatarPercentual(ALIQUOTA_IMPOSTO_PERCENTUAL)} sobre o valor da nota.
+          </p>
+        </div>
+      )}
+
       <div className="mt-6 overflow-x-auto rounded-xl border border-border">
         <Table>
           <TableHeader>
@@ -139,6 +205,7 @@ export default function ProdutosPage() {
               <TableHead>Nome</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Preço de venda</TableHead>
+              <TableHead>Margem</TableHead>
               <TableHead>Estoque</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -146,7 +213,7 @@ export default function ProdutosPage() {
           <TableBody>
             {!carregando && produtos.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                   Nenhum produto encontrado.
                 </TableCell>
               </TableRow>
@@ -171,12 +238,30 @@ export default function ProdutosPage() {
                   )}
                 </TableCell>
                 <TableCell>{produto.categoria.nome}</TableCell>
-                <TableCell>{formatarMoeda(produto.precoVenda)}</TableCell>
+                <TableCell className="valor-sensivel">{formatarMoeda(produto.precoVenda)}</TableCell>
+                <TableCell className="valor-sensivel whitespace-nowrap">
+                  {(() => {
+                    const margem = calcularMargem(produto.precoCusto, produto.precoVenda);
+                    if (margem.percentual === null) {
+                      return <span className="text-muted-foreground">—</span>;
+                    }
+                    return (
+                      <>
+                        <span className={`font-semibold tabular-nums ${corDaFaixa(faixaDaMargem(margem.percentual))}`}>
+                          {formatarPercentual(margem.percentual)}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          {formatarMoeda(margem.lucro)} por {produto.unidade}
+                        </span>
+                      </>
+                    );
+                  })()}
+                </TableCell>
                 <TableCell>
                   {produto.estoqueAtual <= produto.estoqueMinimo ? (
-                    <Badge variant="destructive">{produto.estoqueAtual} un.</Badge>
+                    <Badge variant="destructive">{produto.estoqueAtual} {produto.unidade}</Badge>
                   ) : (
-                    <span>{produto.estoqueAtual} un.</span>
+                    <span>{produto.estoqueAtual} {produto.unidade}</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right">

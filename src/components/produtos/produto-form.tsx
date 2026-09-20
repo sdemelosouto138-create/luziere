@@ -16,6 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatarMoeda } from "@/lib/format";
+import {
+  ALIQUOTA_IMPOSTO_PERCENTUAL,
+  MARGEM_MINIMA_SAUDAVEL,
+  calcularMargem,
+  corDaFaixa,
+  faixaDaMargem,
+  formatarPercentual,
+} from "@/lib/margem";
 
 type Categoria = { id: string; nome: string };
 type Fornecedor = { id: string; nome: string };
@@ -268,6 +277,69 @@ export function ProdutoForm({
             required
           />
         </div>
+
+        {/* Previsão de margem: recalcula a cada tecla, antes mesmo de salvar. */}
+        {(() => {
+          const custo = Number(precoCusto);
+          const venda = Number(precoVenda);
+          if (!Number.isFinite(custo) || !Number.isFinite(venda) || venda <= 0) return null;
+
+          const margem = calcularMargem(custo, venda);
+          const faixa = faixaDaMargem(margem.percentual);
+
+          return (
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Previsão de margem</Label>
+              <div className="valor-sensivel rounded-xl border border-border bg-secondary/40 p-4">
+                <dl className="space-y-1.5 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted-foreground">Preço de venda</dt>
+                    <dd className="tabular-nums">{formatarMoeda(venda)}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted-foreground">
+                      Imposto sobre a nota ({formatarPercentual(ALIQUOTA_IMPOSTO_PERCENTUAL)})
+                    </dt>
+                    <dd className="tabular-nums text-muted-foreground">− {formatarMoeda(margem.imposto)}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted-foreground">Custo do produto</dt>
+                    <dd className="tabular-nums text-muted-foreground">− {formatarMoeda(custo)}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4 border-t border-border pt-2">
+                    <dt className="font-medium">Lucro por {unidade}</dt>
+                    <dd className={`font-semibold tabular-nums ${corDaFaixa(faixa)}`}>
+                      {formatarMoeda(margem.lucro)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="font-medium">Margem líquida</dt>
+                    <dd className={`font-semibold tabular-nums ${corDaFaixa(faixa)}`}>
+                      {margem.percentual === null ? "—" : formatarPercentual(margem.percentual)}
+                    </dd>
+                  </div>
+                  {margem.markup !== null && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">Retorno sobre o custo</dt>
+                      <dd className="tabular-nums text-muted-foreground">{formatarPercentual(margem.markup)}</dd>
+                    </div>
+                  )}
+                </dl>
+
+                {faixa === "prejuizo" && (
+                  <p className="mt-3 text-xs font-medium text-destructive">
+                    Este preço dá prejuízo: depois do imposto, a venda não cobre o custo.
+                  </p>
+                )}
+                {faixa === "baixa" && (
+                  <p className="mt-3 text-xs text-amber-600 dark:text-amber-500">
+                    Margem abaixo de {MARGEM_MINIMA_SAUDAVEL}%. Confira se o custo está atualizado.
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="space-y-2">
           <Label>Unidade</Label>
