@@ -10,6 +10,13 @@ import { PedidoStatusActions } from "@/components/pedidos/pedido-status-actions"
 import { PedidoExcluirButton } from "@/components/pedidos/pedido-excluir-button";
 import { formatarData, formatarMoeda } from "@/lib/format";
 import { calcularSubtotalItens, calcularValorDesconto, calcularTotalPedido } from "@/lib/pedido";
+import {
+  ALIQUOTA_IMPOSTO_PERCENTUAL,
+  calcularMargemPedido,
+  corDaFaixa,
+  faixaDaMargem,
+  formatarPercentual,
+} from "@/lib/margem";
 
 export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/[id]">) {
   const { id } = await params;
@@ -27,6 +34,8 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
     ...i,
     precoUnitario: Number(i.precoUnitario),
     subtotal: Number(i.subtotal),
+    // Decimal do Prisma vira number aqui para o calculo de margem.
+    produto: { ...i.produto, precoCusto: Number(i.produto.precoCusto), precoVenda: Number(i.produto.precoVenda) },
   }));
   // Agrupa por ambiente (Quarto, Sacada...) na ordem definida na montagem.
   // Ambientes ainda sem itens continuam listados, para o pedido não parecer incompleto.
@@ -41,6 +50,7 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
   const subtotal = calcularSubtotalItens(itens);
   const valorDesconto = calcularValorDesconto(subtotal, Number(pedido.desconto), pedido.descontoTipo);
   const total = calcularTotalPedido(itens, Number(pedido.desconto), pedido.descontoTipo, Number(pedido.frete));
+  const margem = calcularMargemPedido(itens, Number(pedido.desconto), pedido.descontoTipo, Number(pedido.frete));
 
   return (
     <div>
@@ -154,23 +164,72 @@ export default async function DetalhePedidoPage({ params }: PageProps<"/pedidos/
           )}
         </div>
 
-        <div className="ml-auto w-full max-w-xs space-y-1.5 rounded-xl border border-border p-4 text-sm">
-          <div className="flex justify-between text-muted-foreground">
-            <span>Subtotal</span>
-            <span>{formatarMoeda(subtotal)}</span>
+        <div className="ml-auto w-full max-w-xs space-y-4">
+          <div className="space-y-1.5 rounded-xl border border-border p-4 text-sm">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Subtotal</span>
+              <span>{formatarMoeda(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Desconto</span>
+              <span>- {formatarMoeda(valorDesconto)}</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Frete</span>
+              <span>{formatarMoeda(Number(pedido.frete))}</span>
+            </div>
+            <div className="flex justify-between border-t border-border pt-1.5 font-serif text-lg text-foreground">
+              <span>Total</span>
+              <span className="text-primary">{formatarMoeda(total)}</span>
+            </div>
           </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>Desconto</span>
-            <span>- {formatarMoeda(valorDesconto)}</span>
-          </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>Frete</span>
-            <span>{formatarMoeda(Number(pedido.frete))}</span>
-          </div>
-          <div className="flex justify-between border-t border-border pt-1.5 font-serif text-lg text-foreground">
-            <span>Total</span>
-            <span className="text-primary">{formatarMoeda(total)}</span>
-          </div>
+
+          {/* Margem: informação interna, nunca sai no PDF que vai para o cliente. */}
+          {margem.percentual !== null && (
+            <div className="valor-sensivel space-y-1.5 rounded-xl border border-border bg-secondary/40 p-4 text-sm">
+              <p className="pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Margem estimada
+              </p>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Receita dos produtos</span>
+                <span className="tabular-nums">{formatarMoeda(margem.receita)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Custo dos produtos</span>
+                <span className="tabular-nums">- {formatarMoeda(margem.custo)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Imposto ({formatarPercentual(ALIQUOTA_IMPOSTO_PERCENTUAL)})</span>
+                <span className="tabular-nums">- {formatarMoeda(margem.imposto)}</span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-1.5 font-medium">
+                <span>Lucro estimado</span>
+                <span className={`tabular-nums font-semibold ${corDaFaixa(faixaDaMargem(margem.percentual))}`}>
+                  {formatarMoeda(margem.lucro)}
+                </span>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span>Margem</span>
+                <span className={`tabular-nums font-semibold ${corDaFaixa(faixaDaMargem(margem.percentual))}`}>
+                  {formatarPercentual(margem.percentual)}
+                </span>
+              </div>
+
+              {margem.itensSemCusto > 0 && (
+                <p className="pt-2 text-xs text-amber-600 dark:text-amber-500">
+                  {margem.itensSemCusto}{" "}
+                  {margem.itensSemCusto === 1 ? "item está" : "itens estão"} sem custo cadastrado, então a
+                  margem está otimista.
+                </p>
+              )}
+
+              <p className="border-t border-border pt-2 text-xs text-muted-foreground">
+                Calculada com o custo atual dos produtos
+                {Number(pedido.frete) > 0 ? "; o frete é tratado como repasse e não entra no lucro" : ""}. Não
+                aparece no PDF do cliente.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,3 +1,5 @@
+import { calcularValorDesconto } from "@/lib/pedido";
+
 /**
  * Cálculo de margem dos produtos.
  *
@@ -110,4 +112,57 @@ export function resumirMargens(produtos: ProdutoComPrecos[]) {
 /** Formata uma porcentagem no padrão brasileiro: 34,1% */
 export function formatarPercentual(valor: number, casas = 1): string {
   return `${valor.toFixed(casas).replace(".", ",")}%`;
+}
+
+type ItemParaMargem = {
+  quantidade: number;
+  subtotal: number | string;
+  produto: { precoCusto: number | string };
+};
+
+export type MargemPedido = {
+  /** O que entra de produto, já descontado o desconto do pedido. */
+  receita: number;
+  /** O que sai para pagar os fornecedores, pelo custo atual cadastrado. */
+  custo: number;
+  /** Imposto sobre o valor da nota (produtos + frete). */
+  imposto: number;
+  lucro: number;
+  percentual: number | null;
+  /** Quantos itens estão com custo zerado — nesses a margem fica otimista. */
+  itensSemCusto: number;
+};
+
+/**
+ * Margem estimada de um pedido inteiro.
+ *
+ * Duas decisões que valem registrar:
+ * - O custo vem do cadastro ATUAL do produto, porque o ItemPedido guarda só o
+ *   preço de venda. Se o fornecedor reajustar depois, a margem de um pedido
+ *   antigo muda junto — por isso "estimada".
+ * - O frete é tratado como repasse: não vira lucro, mas entra na base do
+ *   imposto, já que sai na nota.
+ */
+export function calcularMargemPedido(
+  itens: ItemParaMargem[],
+  desconto: number | string,
+  descontoTipo: string,
+  frete: number | string,
+): MargemPedido {
+  const subtotalItens = itens.reduce((soma, item) => soma + Number(item.subtotal), 0);
+  const valorDesconto = calcularValorDesconto(subtotalItens, desconto, descontoTipo);
+  const receita = subtotalItens - valorDesconto;
+
+  const custo = itens.reduce((soma, item) => soma + item.quantidade * Number(item.produto.precoCusto), 0);
+  const imposto = (receita + Number(frete)) * ALIQUOTA_IMPOSTO;
+  const lucro = receita - custo - imposto;
+
+  return {
+    receita,
+    custo,
+    imposto,
+    lucro,
+    percentual: receita > 0 ? (lucro / receita) * 100 : null,
+    itensSemCusto: itens.filter((item) => Number(item.produto.precoCusto) <= 0).length,
+  };
 }
