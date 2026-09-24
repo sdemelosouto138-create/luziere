@@ -3,6 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { prisma } from "@/lib/prisma";
 import { OrcamentoPdf, type OrcamentoPdfData } from "@/components/pdf/orcamento-pdf";
 import { calcularSubtotalItens, calcularValorDesconto, calcularTotalPedido } from "@/lib/pedido";
+import { paraNomeDeArquivo } from "@/lib/format";
 
 export async function GET(_request: Request, { params }: RouteContext<"/api/pedidos/[id]/pdf">) {
   const { id } = await params;
@@ -67,10 +68,15 @@ export async function GET(_request: Request, { params }: RouteContext<"/api/pedi
 
   const buffer = await renderToBuffer(OrcamentoPdf({ dados }));
 
+  // Nome do arquivo com o cliente, para o PDF chegar identificado no WhatsApp.
+  // Se o nome não sobrar nada utilizável, cai no número do pedido.
+  const nomeCliente = paraNomeDeArquivo(pedido.cliente.nome);
+  const nomeArquivo = nomeCliente ? `Luziere_${nomeCliente}.pdf` : `Luziere_pedido_${pedido.numero}.pdf`;
+
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="orcamento-luziere-${pedido.numero}.pdf"`,
+      "Content-Disposition": `inline; filename="${nomeArquivo}"`,
     },
   });
 }
