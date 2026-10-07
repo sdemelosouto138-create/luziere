@@ -58,7 +58,8 @@ export default function NovaCompraPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [pedidos, setPedidos] = useState<PedidoParaImportar[]>([]);
 
-  const [fornecedorId, setFornecedorId] = useState<string>(SEM_FORNECEDOR);
+  // Vazio = o usuário ainda não escolheu; o valor efetivo é derivado abaixo.
+  const [fornecedorEscolhido, setFornecedorEscolhido] = useState<string>("");
   const [itens, setItens] = useState<ItemSelecionado[]>([]);
   const [observacoes, setObservacoes] = useState("");
 
@@ -69,18 +70,16 @@ export default function NovaCompraPage() {
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
-    fetch("/api/fornecedores")
-      .then((r) => r.json())
-      .then((lista: Fornecedor[]) => {
-        setFornecedores(lista);
-        // Começa no primeiro fornecedor: abrir em "Sem fornecedor" mostraria
-        // um catálogo praticamente vazio.
-        if (lista.length > 0) setFornecedorId(lista[0].id);
-      });
+    fetch("/api/fornecedores").then((r) => r.json()).then(setFornecedores);
     fetch("/api/categorias").then((r) => r.json()).then(setCategorias);
     fetch("/api/produtos").then((r) => r.json()).then(setCatalogo);
     fetch("/api/compras?incluirComprados=true").then((r) => r.json()).then(setPedidos);
   }, []);
+
+  // Sem escolha ainda, abre no primeiro fornecedor — abrir em "Sem fornecedor"
+  // mostraria um catálogo praticamente vazio. Derivado, e não guardado em estado,
+  // para não depender da ordem entre a resposta da API e a hidratação.
+  const fornecedorId = fornecedorEscolhido || fornecedores[0]?.id || SEM_FORNECEDOR;
 
   const produtosVisiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -250,7 +249,7 @@ export default function NovaCompraPage() {
           <Select
             value={fornecedorId}
             onValueChange={(valor) => {
-              setFornecedorId(valor);
+              setFornecedorEscolhido(valor);
               setItens([]);
             }}
           >
