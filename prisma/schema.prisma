@@ -43,6 +43,7 @@ model Produto {
 
   imagens       ImagemProduto[]
   itensPedido   ItemPedido[]
+  itensCompra   ItemCompra[]
   movimentacoes MovimentacaoEstoque[]
 
   @@map("produtos")
@@ -68,6 +69,7 @@ model Fornecedor {
 
   produtos Produto[]
   notas    NotaFiscal[]
+  compras  Compra[]
 
   @@map("fornecedores")
 }
@@ -85,6 +87,9 @@ model NotaFiscal {
   arquivoNome  String
   criadoEm     DateTime   @default(now())
 
+  // Indice criado na migracao 20260910010000_notas_fiscais e nunca declarado aqui:
+  // sem esta linha o Prisma o derruba para "alinhar" o banco ao schema.
+  @@index([fornecedorId])
   @@map("notas_fiscais")
 }
 
@@ -190,4 +195,42 @@ model MovimentacaoEstoque {
   criadoEm   DateTime         @default(now())
 
   @@map("movimentacoes_estoque")
+}
+
+/// Compra lançada à mão, independente dos pedidos de venda.
+/// Existe para o caso de parte do pedido já ter sido comprada e instalada:
+/// em vez de editar o pedido do cliente, registra-se só o que falta comprar.
+/// Uma compra é sempre para UM fornecedor, porque é isso que vira um PDF
+/// enviado a ele. Não mexe em estoque: é documento de compra, não entrada.
+model Compra {
+  id           String      @id @default(cuid())
+  numero       Int         @unique @default(autoincrement())
+  fornecedorId String?
+  fornecedor   Fornecedor? @relation(fields: [fornecedorId], references: [id], onDelete: SetNull)
+  /// Guardado em texto para o histórico não perder o nome se o fornecedor for excluído.
+  fornecedorNome String
+  observacoes  String?
+  criadoEm     DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+
+  itens ItemCompra[]
+
+  @@map("compras")
+}
+
+model ItemCompra {
+  id       String @id @default(cuid())
+  compraId String
+  compra   Compra @relation(fields: [compraId], references: [id], onDelete: Cascade)
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+
+  quantidade Int
+  /// Custo congelado no momento da compra, para o histórico não mudar
+  /// quando o fornecedor reajustar o preço depois.
+  custoUnitario Decimal
+  ordem         Int     @default(0)
+
+  @@map("itens_compra")
 }

@@ -80,6 +80,8 @@ export type CompraPdfData = {
   geradoEm: Date;
   /** Números dos pedidos considerados na lista. */
   pedidos: number[];
+  /** Identificação da compra avulsa, quando vier de uma. Ex.: "Compra nº 3". */
+  referencia?: string;
   loja: { nome: string; telefone: string; email: string; cnpj: string };
 };
 
@@ -117,6 +119,7 @@ export function CompraPdf({ dados }: { dados: CompraPdfData }) {
         <Text style={styles.tituloDocumento}>{titulo}</Text>
         <Text style={styles.subinfo}>
           Gerado em {formatarData(dados.geradoEm)}
+          {dados.referencia ? ` · ${dados.referencia}` : ""}
           {dados.pedidos.length > 0
             ? ` · referente aos pedidos ${dados.pedidos.map((n) => `#${n}`).join(", ")}`
             : ""}
@@ -143,9 +146,12 @@ export function CompraPdf({ dados }: { dados: CompraPdfData }) {
                 </View>
                 <View style={styles.colProduto}>
                   <Text style={styles.produtoNome}>{item.nome}</Text>
-                  <Text style={styles.produtoPedidos}>
-                    Pedidos {item.pedidos.map((n) => `#${n}`).join(", ")}
-                  </Text>
+                  {/* Compra avulsa não vem de pedido nenhum: a linha some. */}
+                  {item.pedidos.length > 0 ? (
+                    <Text style={styles.produtoPedidos}>
+                      Pedidos {item.pedidos.map((n) => `#${n}`).join(", ")}
+                    </Text>
+                  ) : null}
                 </View>
                 <Text style={[styles.quantidade, styles.colQtd]}>
                   {item.quantidade} {item.unidade}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Download, FileText, AlertTriangle } from "lucide-react";
+import { Check, Download, FileText, AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +11,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatarData, formatarMoeda } from "@/lib/format";
 import { agruparComprasPorFornecedor, type PedidoParaCompra } from "@/lib/compras";
+
+/** Uma compra avulsa já registrada, como vem de /api/compras/avulsas. */
+type CompraAvulsa = {
+  id: string;
+  numero: number;
+  fornecedorNome: string;
+  observacoes: string | null;
+  criadoEm: string;
+  custoTotal: number;
+  itens: { id: string; quantidade: number }[];
+};
 
 type PedidoDaLista = PedidoParaCompra & {
   criadoEm: string;
@@ -23,13 +34,18 @@ export default function ComprasPage() {
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState(true);
   const [marcando, setMarcando] = useState(false);
+  const [avulsas, setAvulsas] = useState<CompraAvulsa[]>([]);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
-    const response = await fetch("/api/compras");
+    const [response, responseAvulsas] = await Promise.all([
+      fetch("/api/compras"),
+      fetch("/api/compras/avulsas"),
+    ]);
     const dados: PedidoDaLista[] = await response.json();
     setPedidos(dados);
     setSelecionados(new Set(dados.map((p) => p.id)));
+    setAvulsas(await responseAvulsas.json());
     setCarregando(false);
   }, []);
 
@@ -57,6 +73,19 @@ export default function ComprasPage() {
 
   const idsSelecionados = [...selecionados].join(",");
 
+  async function excluirAvulsa(compra: CompraAvulsa) {
+    if (!confirm(`Excluir a compra nº ${compra.numero} do histórico? Isso não desfaz nada além do registro.`)) {
+      return;
+    }
+    const response = await fetch(`/api/compras/avulsas/${compra.id}`, { method: "DELETE" });
+    if (!response.ok) {
+      toast.error("Não foi possível excluir a compra.");
+      return;
+    }
+    toast.success("Compra removida do histórico.");
+    carregar();
+  }
+
   async function marcarComoComprados() {
     if (selecionados.size === 0) return;
     setMarcando(true);
@@ -79,10 +108,20 @@ export default function ComprasPage() {
 
   return (
     <div>
-      <h1 className="font-serif text-3xl text-foreground">Compras</h1>
-      <p className="mt-1 text-muted-foreground">
-        O que precisa ser comprado dos fornecedores para atender os pedidos aprovados.
-      </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="font-serif text-3xl text-foreground">Compras</h1>
+          <p className="mt-1 text-muted-foreground">
+            O que precisa ser comprado dos fornecedores para atender os pedidos aprovados.
+          </p>
+        </div>
+        <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Link href="/compras/nova">
+            <Plus className="size-4" />
+            Nova compra avulsa
+          </Link>
+        </Button>
+      </div>
 
       {!carregando && pedidos.length === 0 && (
         <Card className="mt-6">
@@ -214,6 +253,55 @@ export default function ComprasPage() {
             ))}
           </div>
         </>
+      )}
+
+      {/* Histórico das compras lançadas à mão, independentes dos pedidos. */}
+      {avulsas.length > 0 && (
+        <div className="mt-10">
+          <h2 className="font-serif text-2xl text-foreground">Compras avulsas</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Compras lançadas à mão. Não alteram pedidos nem estoque.
+          </p>
+
+          <div className="mt-4 space-y-2">
+            {avulsas.map((compra) => (
+              <div
+                key={compra.id}
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    Compra nº {compra.numero} · {compra.fornecedorNome}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatarData(compra.criadoEm)} · {compra.itens.length}{" "}
+                    {compra.itens.length === 1 ? "produto" : "produtos"} ·{" "}
+                    {compra.itens.reduce((soma, i) => soma + i.quantidade, 0)} peças ·{" "}
+                    <span className="valor-sensivel">{formatarMoeda(compra.custoTotal)}</span>
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <a
+                    href={`/api/compras/avulsas/${compra.id}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <FileText className="size-4" />
+                    PDF
+                  </a>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => excluirAvulsa(compra)}
+                  aria-label="Excluir compra"
+                >
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
